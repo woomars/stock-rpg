@@ -188,3 +188,4 @@ html, body, #app, canvas { touch-action: manipulation; }
 .briefEra b { color: var(--ink); }
 .briefGo { height: 52px; border: 0; border-radius: 10px; font-size: 17px; font-weight: 800; background: var(--buy); color: #fff; margin-top: 4px; }
 .soundCorner { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 12px; z-index: 2; font-size: 18px; }
+.briefDesc { font-size: 14px; color: var(--ink); line-height: 1.45; margin-top: -2px; }

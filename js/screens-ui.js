@@ -347,7 +347,7 @@
         const m = UI.data.monsters.find((y) => y.id === d.dataset.dex);
         const row = UI.collection.dex[m.id];
         showDetail(row && row.met
-          ? `<b>${esc(m.name)}</b> <span class="dim">만난 횟수 ${row.met} · 처치 ${row.kills} · 최고 공격 ${Format.money(row.bestDealt)}</span>`
+          ? `<b>${esc(m.name)}</b> <span class="dim">만난 횟수 ${row.met} · 처치 ${row.kills} · 최고 공격 ${Format.money(row.bestDealt)}</span><br>${esc(m.desc || '')}`
           : '<b>???</b> <span class="dim">아직 만나지 못한 기업입니다.</span>');
       }
     });

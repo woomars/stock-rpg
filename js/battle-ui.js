@@ -163,7 +163,8 @@
     s.classList.remove('hurtFlash');
     void s.offsetWidth;
     s.classList.add('hurtFlash');
-    if (vibrate && navigator.vibrate) navigator.vibrate(40);
+    const tapped = !navigator.userActivation || navigator.userActivation.hasBeenActive;
+    if (vibrate && tapped && navigator.vibrate) navigator.vibrate(40);
   }
 
   // ---------- 상태 ----------
@@ -328,6 +329,7 @@
     const market = m.board === 'US' ? 'US' : 'KR';
     $('briefStage').textContent = `${UI.run.stage + 1}번째 몬스터 · ${BOARD_NAME[m.board]} · ${STARS[b.tier]}${b.sealed ? ' · 🔒 봉인' : ''}`;
     $('briefName').textContent = m.name;
+    $('briefDesc').textContent = m.desc || '';
     $('briefDate').textContent = `${Briefing.dateText(b.from)} 시작`;
     const mood = Briefing.mood(b.mood);
     $('briefMood').innerHTML = mood ? `<b class="${mood.cls}">${mood.label}</b>${mood.text}` : '';
