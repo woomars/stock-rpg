@@ -19,6 +19,9 @@
   let acc = 0;
   let countTimer = null;
   let toastTimer = null;
+  let itemsHtml = '';
+  const LANDSCAPE = '(orientation: landscape) and (max-height: 500px)';
+  const isLandscape = () => Boolean(window.matchMedia && window.matchMedia(LANDSCAPE).matches);
 
   const monsterOf = (id) => UI.data.monsters.find((m) => m.id === id);
   const battle = () => UI.run && UI.run.battle;
@@ -105,7 +108,11 @@
     const armed = b.nextLot || (b.lot && (b.lot.mult !== 1 || b.lot.dir !== 1) ? { id: b.lot.dir < 0 ? (b.lot.mult > 1 ? 'inv2' : 'inv') : `x${b.lot.mult}` } : null);
     let html = armed ? `<button class="on" disabled>${Rules.ITEMS[armed.id].name}<br><small>사용 중</small></button>` : '';
     html += items.map((id, i) => `<button data-item="${i}" ${running ? '' : 'disabled'}>${Rules.ITEMS[id].name}</button>`).join('');
-    $('items').innerHTML = html;
+    // 칸마다 버튼을 새로 만들면 칸이 넘어가는 순간의 터치가 사라지므로, 바뀐 경우에만 다시 그린다.
+    if (html !== itemsHtml) {
+      $('items').innerHTML = html;
+      itemsHtml = html;
+    }
     $('ctl').classList.toggle('many', items.length + (armed ? 1 : 0) > 3);
   }
 
@@ -175,6 +182,11 @@
   UI.finishCountdown = () => {
     clearInterval(countTimer);
     if (UI.state !== 'countdown') return;
+    // 화면을 벗어난 사이에 카운트다운이 끝나면 일시정지로 둔다.
+    if (document.hidden || isLandscape()) {
+      setState('paused');
+      return;
+    }
     last = performance.now();
     acc = 0;
     setState('running');
@@ -230,19 +242,20 @@
     $('resultTitle').className = `coverTitle ${b.result === 'win' ? 'gold' : 'dn'}`;
     $('resultText').textContent = text[1];
     $('battleResult').hidden = false;
+    // 보상과 다음 단계를 결과 화면을 띄우기 전에 정하고 저장한다. 결과 화면 중 새로고침으로 드롭을 다시 굴리지 못하게 하기 위해서다.
+    const out = Run.finishBattle(UI.run, rng);
+    save();
+    if (out.item) $('resultText').textContent += UI.run.pendingItem ? '' : ` · 아이템 ${Rules.ITEMS[out.item].name}`;
     settling = true;
     settleTimer = setTimeout(UI.settle, UI.fast ? 60000 : 1400);
   }
 
-  // 끝난 전투를 정리하고 다음 전투나 판의 끝으로 넘어간다. 시험에서는 바로 부를 수 있다.
+  // 결과 화면을 닫고 다음 전투나 판의 끝으로 넘어간다. 시험에서는 바로 부를 수 있다.
   UI.settle = () => {
     if (!settling) return;
     settling = false;
     clearTimeout(settleTimer);
     $('battleResult').hidden = true;
-    const out = Run.finishBattle(UI.run, rng);
-    save();
-    if (out.item && !UI.run.pendingItem) toast(`아이템 획득: ${Rules.ITEMS[out.item].name}`);
     if (UI.run.pendingItem) {
       askItem();
       return;
@@ -303,6 +316,11 @@
   // 저장된 판으로 돌아온다. 전투 중이었다면 그 칸의 일시정지 상태로 연다.
   UI.continueRun = () => {
     if (!UI.run) return;
+    // 판이 끝났는데 리포트를 만들기 전에 닫힌 경우
+    if (UI.run.status !== 'playing') {
+      afterBattle();
+      return;
+    }
     if (UI.run.pendingItem) {
       App.show('battle');
       askItem();
@@ -338,7 +356,8 @@
     setTimeout(() => { el.hidden = true; resolve(); }, reduce ? 0 : 1000);
   });
 
-  UI.hasSavedRun = () => Boolean(UI.run && UI.run.status === 'playing');
+  // 진행 중이거나, 끝났지만 아직 리포트를 만들지 못한 판
+  UI.hasSavedRun = () => Boolean(UI.run);
 
   function bind() {
     $('btnBuy').addEventListener('click', () => {
@@ -391,6 +410,8 @@
     });
     $('btnDiscard').addEventListener('click', () => chooseItem(null));
     document.addEventListener('visibilitychange', () => { if (document.hidden) UI.pause(); });
+    // 가로로 돌리면 화면이 덮이므로 멈춘다.
+    if (window.matchMedia) window.matchMedia(LANDSCAPE).addEventListener('change', (e) => { if (e.matches) UI.pause(); });
     window.addEventListener('pagehide', save);
     window.addEventListener('resize', () => { if (battle() && App.current === 'battle') drawChart(); });
   }

@@ -167,3 +167,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .tally { top: 6px; bottom: auto; }
 .chartwin { height: 206px; }
 .holdInfo { font-size: 12px; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+/* 버튼 밖 두 번 누르기 확대 방지 */
+html, body, #app, canvas { touch-action: manipulation; }
+.awards { display: flex; gap: 6px; overflow-x: auto; flex: none; scrollbar-width: none; }
+.awards span { flex: none; background: #3a3657; border-radius: 6px; padding: 3px 7px; font-size: 12px; white-space: nowrap; }

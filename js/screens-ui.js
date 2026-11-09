@@ -104,6 +104,11 @@
     if (r.trophies.length) badges.push(`<span class="chip">새 트로피 ${r.trophies.length}</span>`);
     if (r.medals.length) badges.push(`<span class="chip">메달 ${r.medals.length}</span>`);
     $('reportBadges').innerHTML = badges.join('');
+    // 이번 판에 받은 트로피와 메달의 이름
+    const all = [...Achievements.TROPHIES, ...Achievements.MEDALS];
+    const names = [...r.trophies, ...r.medals].map((id) => all.find((x) => x.id === id)).filter(Boolean);
+    $('reportAwards').innerHTML = names.map((x) => `<span>${x.icon} ${esc(x.name)}</span>`).join('');
+    $('reportAwards').hidden = names.length === 0;
     $('reportList').innerHTML = r.stages.map((s, i) => {
       const [label, cls] = RESULT[s.result] || ['-', 'dim'];
       return `<button class="line" data-stage="${i}"><span class="st ${cls}">${label}</span>`
@@ -286,7 +291,12 @@
       App.show('start');
     });
     $('btnSaveReport').addEventListener('click', async () => {
-      await Saves.putReport(report);
+      try {
+        await Saves.putReport(report);
+      } catch {
+        $('btnSaveReport').textContent = '저장 실패 · 다시 시도';
+        return;
+      }
       reportSaved = true;
       $('btnSaveReport').disabled = true;
       $('btnSaveReport').textContent = '저장됨';

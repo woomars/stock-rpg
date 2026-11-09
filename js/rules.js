@@ -37,7 +37,7 @@
     return {
       monsterId, tier, prices: segment.prices, from: segment.from, to: segment.to,
       cursor: CONFIG.preroll, monsterMax, monsterHp: monsterMax, dot: t.dot,
-      lot: null, nextLot: null, earned: 0, lost: 0, dealt: 0, taken: 0, sells: 0, wins: 0, crits: 0,
+      lot: null, nextLot: null, earned: 0, lost: 0, dealt: 0, taken: 0, sells: 0, wins: 0, manualSells: 0, manualWins: 0, crits: 0,
       boughtAt: -1, soldAt: -1, startMaxHp: player.maxHp, itemsUsed: [], events: [], buys: [], sales: [], minHpRatio: 1, result: null,
     };
   }
@@ -139,6 +139,9 @@
     if (battle.soldAt === battle.cursor) return { ok: false, reason: 'thisCell' };
     const fraction = lot.cost * (1 - pct / 100) < CONFIG.minOrder ? 1 : pct / 100;
     const out = realize(player, battle, fraction, rng);
+    // 자동 매도와 구분해 직접 누른 매도만 센다. 매매 승률과 원샷 메달이 쓴다.
+    battle.manualSells = (battle.manualSells || 0) + 1;
+    if (out.pnl > 0) battle.manualWins = (battle.manualWins || 0) + 1;
     battle.soldAt = battle.cursor;
     finishIfOver(player, battle, rng);
     return { ok: true, ...out };
@@ -152,6 +155,7 @@
     const left = battle.monsterHp * (1 - modsOf(player).timeoutResist);
     player.hp -= left;
     battle.taken += left;
+    battle.minHpRatio = Math.min(battle.minHpRatio === undefined ? 1 : battle.minHpRatio, player.hp / player.maxHp);
     battle.events.push({ cell: battle.cursor, type: 'hurt', amount: left, crit: 1, timeout: true });
     battle.result = player.hp <= 0 ? 'dead' : 'timeout';
   }

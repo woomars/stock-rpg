@@ -4,20 +4,24 @@
   const comma = (n) => Math.round(n).toLocaleString('en-US');
   const trim = (n) => String(Number(n.toFixed(1)));
 
+  // 표시 단위로 먼저 반올림한 뒤 단위를 고른다. "10,000만"이나 "1억 10,000만"이 나오지 않게 하기 위해서다.
   function won(abs) {
-    if (abs >= 1e12) {
-      const jo = Math.floor(abs / 1e12);
-      const eok = Math.round((abs - jo * 1e12) / 1e8);
-      return eok ? `${comma(jo)}조 ${comma(eok)}억` : `${comma(jo)}조`;
+    if (abs < 1e4) return `${comma(abs)}원`;
+    if (abs < 1e6) {
+      const v = Number((abs / 1e4).toFixed(1));
+      if (v < 100) return `${trim(v)}만`;
     }
-    if (abs >= 1e8) {
-      const eok = Math.floor(abs / 1e8);
-      const man = Math.round((abs - eok * 1e8) / 1e4);
-      return man ? `${comma(eok)}억 ${comma(man)}만` : `${comma(eok)}억`;
+    const man = Math.round(abs / 1e4);
+    if (man < 1e4) return `${comma(man)}만`;
+    if (man < 1e8) {
+      const eok = Math.floor(man / 1e4);
+      const rest = man % 1e4;
+      return rest ? `${comma(eok)}억 ${comma(rest)}만` : `${comma(eok)}억`;
     }
-    if (abs >= 1e6) return `${comma(abs / 1e4)}만`;
-    if (abs >= 1e4) return `${trim(abs / 1e4)}만`;
-    return `${comma(abs)}원`;
+    const eokTotal = Math.round(abs / 1e8);
+    const jo = Math.floor(eokTotal / 1e4);
+    const rest = eokTotal % 1e4;
+    return rest ? `${comma(jo)}조 ${comma(rest)}억` : `${comma(jo)}조`;
   }
 
   function money(n, currency = 'KRW') {

@@ -17,7 +17,7 @@
       monsterId: battle.monsterId, name: m.name, board: m.board, currency: m.currency, tier: battle.tier,
       from: battle.from, to: battle.to, result: battle.result, sealed: Boolean(battle.sealed),
       dealt: battle.dealt, taken: battle.taken, earned: battle.earned, lost: battle.lost,
-      monsterMax: battle.monsterMax, sells: battle.sells, wins: battle.wins, crits: battle.crits,
+      monsterMax: battle.monsterMax, sells: battle.manualSells ?? battle.sells, wins: battle.manualWins ?? battle.wins, crits: battle.crits,
       itemsUsed: battle.itemsUsed || [], holdPct: holdPct(battle),
       prices: battle.prices, cursorEnd: battle.cursor, markers: Rules.markers(battle), events: battle.events,
       buys: battle.buys || [], sales: battle.sales || [], minHpRatio: battle.minHpRatio === undefined ? 1 : battle.minHpRatio,
