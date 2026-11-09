@@ -171,6 +171,7 @@
     const reports = await Saves.listReports();
     $('journeyCount').textContent = `${reports.length}판 · 클리어 ${reports.filter((r) => r.status === 'clear').length}`;
     $('journeyEmpty').hidden = reports.length > 0;
+    $('btnJourneyStart').textContent = UI.hasSavedRun() ? '이어 하기' : '시작하기';
     $('journeyList').hidden = reports.length === 0;
     $('journeyBest').hidden = reports.length === 0;
     if (reports.length) {
@@ -250,16 +251,18 @@
     $('trophyDetail').hidden = false;
   }
 
+  function startOrContinue() {
+    if (UI.hasSavedRun()) UI.continueRun();
+    else {
+      renderGrowth();
+      App.show('growth');
+    }
+  }
+
   // ---------- 연결 ----------
 
   function bind() {
-    $('btnStart').addEventListener('click', () => {
-      if (UI.hasSavedRun()) UI.continueRun();
-      else {
-        renderGrowth();
-        App.show('growth');
-      }
-    });
+    $('btnStart').addEventListener('click', startOrContinue);
     $('btnNewRun').addEventListener('click', async () => {
       if (!(await confirmBox('진행 중인 판을 버리고 새로 시작할까요? 그 판의 내공은 받지 못합니다.', '새로 시작', '취소'))) return;
       Saves.clearRun();
@@ -301,10 +304,8 @@
       fromJourney = true;
       showReport(UI.journeyReports.find((r) => r.id === b.dataset.report));
     });
-    $('btnJourneyStart').addEventListener('click', () => {
-      renderGrowth();
-      App.show('growth');
-    });
+    // 진행 중인 판이 있으면 시작 화면의 버튼처럼 이어 한다. 확인 없이 판을 버리지 않기 위해서다.
+    $('btnJourneyStart').addEventListener('click', startOrContinue);
     $('btnJourneyBack').addEventListener('click', () => {
       renderStart();
       App.show('start');

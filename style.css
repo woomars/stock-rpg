@@ -156,3 +156,14 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .cover.confirm { z-index: 10; font-size: 15px; }
 .act.two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .battleScene > .sky { bottom: 190px; height: 34%; }
+/* 카운트다운은 그래프를 가리지 않고 몬스터 자리 위에만 숫자를 띄운다 */
+#countdown { top: 70px; bottom: auto; height: 38%; background: none; pointer-events: none; padding: 0; text-shadow: 0 2px 8px #000; }
+/* 회사 이름과 보유 수량 (사용자 피드백) */
+.arena { flex-direction: column; gap: 6px; }
+.plate { width: 112px; height: 112px; }
+.monsterLabel { text-align: center; line-height: 1.2; text-shadow: 0 2px 6px rgba(0,0,0,.8); max-width: 70%; }
+.monsterLabel b { display: block; font-size: 20px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.monsterLabel small { font-size: 12px; color: var(--ink2); }
+.tally { top: 6px; bottom: auto; }
+.chartwin { height: 206px; }
+.holdInfo { font-size: 12px; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }

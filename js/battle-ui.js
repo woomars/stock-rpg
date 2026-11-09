@@ -40,6 +40,8 @@
     const m = monsterOf(b.monsterId);
     $('monsterName').textContent = m.name;
     $('monsterLogo').innerHTML = logoHtml(m);
+    $('monsterLabel').querySelector('b').textContent = m.name;
+    $('monsterLabel').querySelector('small').textContent = `${BOARD_NAME[m.board]} · 시총 ${Format.money(m.marketCapKrw)}`;
     $('sealTag').hidden = !b.sealed;
     document.querySelector('.battleScene').dataset.board = m.board;
     if (globalThis.Backgrounds) $('battleSky').innerHTML = Backgrounds.svg(m.board);
@@ -65,6 +67,9 @@
       pnl.textContent = b.nextLot ? `${Rules.ITEMS[b.nextLot.id].name} 대기 중` : '보유 없음';
       pnl.className = b.nextLot ? 'gold' : 'dim';
     }
+    $('holdInfo').textContent = b.lot
+      ? `보유 ${Format.shares(b.lot.qty)} · 평단 ${Format.price(b.lot.avg, m.currency)} · 평가 ${Format.money(b.lot.cost + u)}`
+      : `보유 없음 · 현금 ${Format.money(Rules.cash(p, b))}`;
     $('playerName').textContent = `나 · Lv.${Rules.levelFor(p.maxHp)}`;
     $('playerHpText').textContent = `${Format.money(Math.max(0, p.hp))} / ${Format.money(p.maxHp)}`;
     $('playerHpBar').style.width = `${Math.max(0, Math.min(1, p.hp / p.maxHp)) * 100}%`;
@@ -86,8 +91,16 @@
     const amount = Rules.cash(player(), b) * UI.pct / 100;
     $('btnBuy').disabled = !running || b.boughtAt === b.cursor || amount < Rules.CONFIG.minOrder;
     $('btnSell').disabled = !running || !b.lot || b.soldAt === b.cursor;
-    $('buyHint').textContent = `현금의 ${UI.pct}%`;
-    $('sellHint').textContent = `보유의 ${UI.pct}%`;
+    // 이번에 사고팔 주수와 금액을 버튼에 적는다. 팔기는 끝수가 남으면 전량이 된다.
+    const price = b.prices[b.cursor];
+    $('buyHint').textContent = amount >= Rules.CONFIG.minOrder ? `${Format.shares(amount / price)} · 약 ${Format.money(amount)}` : '현금 부족';
+    if (b.lot) {
+      const all = b.lot.cost * (1 - UI.pct / 100) < Rules.CONFIG.minOrder;
+      const f = all ? 1 : UI.pct / 100;
+      $('sellHint').textContent = `${all ? '전량 ' : ''}${Format.shares(b.lot.qty * f)} · 약 ${Format.money((b.lot.cost + Rules.unrealized(b)) * f)}`;
+    } else {
+      $('sellHint').textContent = '보유 없음';
+    }
     const items = player().items;
     const armed = b.nextLot || (b.lot && (b.lot.mult !== 1 || b.lot.dir !== 1) ? { id: b.lot.dir < 0 ? (b.lot.mult > 1 ? 'inv2' : 'inv') : `x${b.lot.mult}` } : null);
     let html = armed ? `<button class="on" disabled>${Rules.ITEMS[armed.id].name}<br><small>사용 중</small></button>` : '';
@@ -254,9 +267,10 @@
     if (UI.run.status !== 'playing') {
       setState('idle');
       const run = UI.run;
-      Saves.clearRun();
+      // 리포트를 만든 뒤에 진행 저장을 지운다. 중간에 실패해도 판이 사라지지 않게 하기 위해서다.
       if (UI.onRunEnd) UI.onRunEnd(run);
       else App.show('start');
+      Saves.clearRun();
       return;
     }
     const next = monsterOf(UI.run.order[UI.run.stage]);

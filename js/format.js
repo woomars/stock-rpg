@@ -27,7 +27,10 @@
   }
 
   function price(n, currency = 'KRW') {
-    return currency === 'USD' ? `$${n.toFixed(2)}` : `${comma(n)}원`;
+    if (currency !== 'USD') return `${comma(n)}원`;
+    // 분할을 보정한 옛 달러 가격은 1달러보다 작을 수 있어 유효 숫자를 살린다.
+    const digits = n < 1 ? 4 : n < 10 ? 3 : 2;
+    return `$${n.toFixed(digits)}`;
   }
 
   function signed(n, currency = 'KRW') {
@@ -43,7 +46,14 @@
     return `${x > 0 ? '+' : MINUS}${body}%`;
   }
 
-  const Format = { money, price, signed, pct };
+  // 보유 수량. 자동 매매로 소수 주가 생길 수 있다.
+  function shares(q) {
+    if (q >= 100) return `${comma(Math.floor(q))}주`;
+    if (q >= 0.01) return `${Number((Math.floor(q * 100) / 100).toFixed(2))}주`;
+    return `${Number(q.toPrecision(2))}주`;
+  }
+
+  const Format = { money, price, signed, pct, shares };
   globalThis.Format = Format;
   if (typeof module !== 'undefined') module.exports = Format;
 })();

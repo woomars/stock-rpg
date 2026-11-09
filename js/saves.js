@@ -12,7 +12,10 @@
   const COLLECTION = 'collection';
   const COLLECTION_ID = 'main';
 
-  const browserStorage = () => (typeof localStorage !== 'undefined' ? localStorage : null);
+  // 사이트 데이터를 막은 브라우저는 localStorage에 접근만 해도 throw한다.
+  function browserStorage() {
+    try { return typeof localStorage !== 'undefined' ? localStorage : null; } catch { return null; }
+  }
 
   function saveRun(run, storage = browserStorage()) {
     try { storage.setItem(RUN_KEY, JSON.stringify(run)); } catch { /* 저장 실패는 게임을 멈추지 않는다 */ }
@@ -89,21 +92,27 @@
     };
   }
 
-  let fallback = null;
-  // 브라우저에서는 IndexedDB를 쓰고, 열리지 않으면 메모리로 바꾼다.
-  function defaultDb() {
-    if (fallback) return fallback;
-    if (typeof indexedDB === 'undefined') {
-      fallback = memoryDb();
-      return fallback;
-    }
-    const idb = idbDb();
-    const mem = memoryDb();
-    const guard = (name) => async (...args) => {
-      try { return await idb[name](...args); } catch { return mem[name](...args); }
+  // 한 번이라도 실패하면 그 세션 동안 계속 대체 저장소를 쓴다.
+  // 읽기에 실패한 뒤 빈 값으로 원래 저장소를 덮어쓰지 않기 위해서다.
+  function guarded(primary, fallback) {
+    let broken = false;
+    const wrap = (name) => async (...args) => {
+      if (!broken) {
+        try { return await primary[name](...args); } catch { broken = true; }
+      }
+      return fallback[name](...args);
     };
-    fallback = Object.fromEntries(Object.keys(idb).map((k) => [k, guard(k)]));
-    return fallback;
+    return Object.fromEntries(Object.keys(fallback).map((k) => [k, wrap(k)]));
+  }
+
+  let shared = null;
+  function defaultDb() {
+    if (!shared) {
+      let hasIdb = false;
+      try { hasIdb = typeof indexedDB !== 'undefined'; } catch { hasIdb = false; }
+      shared = hasIdb ? guarded(idbDb(), memoryDb()) : memoryDb();
+    }
+    return shared;
   }
 
   async function putReport(report, db = defaultDb()) { await db.putReport(report); }
@@ -123,11 +132,27 @@
     return JSON.stringify({ app: APP, version: VERSION, savedAt: new Date().toISOString(), reports, collection });
   }
 
+  const isObj = (v) => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
+
+  // 기존 기록을 지우기 전에 파일 전체를 검사한다.
   function unpack(text) {
     const data = JSON.parse(text);
+    const bad = () => { throw new Error('백업 파일 내용이 올바르지 않습니다'); };
     if (!data || data.app !== APP || data.version !== VERSION) throw new Error('목숨걸고 투자의 백업 파일이 아닙니다');
-    if (!Array.isArray(data.reports) || !data.collection || typeof data.collection !== 'object') throw new Error('백업 파일 내용이 올바르지 않습니다');
-    return { reports: data.reports, collection: data.collection };
+    if (!Array.isArray(data.reports) || !isObj(data.collection)) bad();
+    for (const r of data.reports) {
+      if (!isObj(r) || typeof r.id !== 'string' || typeof r.createdAt !== 'string' || !Array.isArray(r.stages)) bad();
+    }
+    const c = data.collection;
+    if ('seen' in c && !isObj(c.seen)) bad();
+    if ('dex' in c && !isObj(c.dex)) bad();
+    const ok = (obj, key, check) => !(key in obj) || check(obj[key]);
+    if ('meta' in c && (!isObj(c.meta) || !ok(c.meta, 'points', Number.isFinite) || !ok(c.meta, 'runs', Number.isFinite) || !ok(c.meta, 'upgrades', isObj))) bad();
+    if ('achievements' in c) {
+      const a = c.achievements;
+      if (!isObj(a) || !ok(a, 'trophies', Array.isArray) || !ok(a, 'medals', Array.isArray) || !ok(a, 'life', isObj)) bad();
+    }
+    return { reports: data.reports, collection: c };
   }
 
   async function exportAll(db = defaultDb()) {
@@ -142,7 +167,7 @@
   }
 
   const Saves = {
-    RUN_KEY, saveRun, loadRun, clearRun, emptyCollection, memoryDb, putReport, listReports, getCollection, putCollection,
+    RUN_KEY, saveRun, loadRun, clearRun, emptyCollection, memoryDb, guarded, putReport, listReports, getCollection, putCollection,
     pack, unpack, exportAll, importAll,
   };
   globalThis.Saves = Saves;
