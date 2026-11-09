@@ -1,0 +1,10 @@
+{
+  "name": "목숨걸고 투자",
+  "short_name": "목숨걸고 투자",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#090712",
+  "theme_color": "#090712",
+  "icons": []
+}

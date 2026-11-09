@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090712">
+<title>목숨걸고 투자</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css?v=dac7fc8ac1">
+</head>
+<body>
+<div id="app">
+
+  <!-- 시작 -->
+  <section id="screen-start" class="screen scene">
+    <div class="sky" data-board="KOSDAQ"></div>
+    <div class="startTitle">
+      <div class="gold eyebrow" id="startSub">초기 자금 천만 원</div>
+      <h1>목숨걸고<br>투자</h1>
+    </div>
+    <div class="act startAct">
+      <button id="btnStart" class="pri big">시작하기</button>
+      <button id="btnNewRun" class="link" hidden>새로 시작</button>
+      <button id="btnJourney" class="solid">그동안의 여정</button>
+      <button id="btnTrophy" class="solid">트로피와 메달</button>
+      <p class="disclaimer" id="disclaimer">재미용 게임입니다. 투자 조언이 아닙니다. 과거 실제 주가를 씁니다.</p>
+    </div>
+  </section>
+
+  <!-- 성장 -->
+  <section id="screen-growth" class="screen full" hidden>
+    <div class="row head"><b class="title">성장</b><span>내공 <b id="growthPoints" class="gold">0</b></span></div>
+    <p class="dim small" id="growthNote">죽어도 내공은 남습니다. 강화는 다음 판부터 계속 적용됩니다.</p>
+    <div class="list" id="upgradeList"></div>
+    <div class="act">
+      <button id="btnDepart" class="pri">출발</button>
+      <button id="btnGrowthBack" class="solid">← 처음으로</button>
+    </div>
+  </section>
+
+  <!-- 전투 -->
+  <section id="screen-battle" class="screen" hidden>
+    <div class="scene battleScene">
+      <div class="sky" id="battleSky"></div>
+      <div class="hud">
+        <div class="hudMain">
+          <div class="dim small" id="stageInfo">1 / 10</div>
+          <div class="row"><b id="monsterName" class="monsterName">-</b><span id="monsterHpText">-</span></div>
+          <div class="bar hpm"><i id="monsterHpBar"></i></div>
+        </div>
+        <button id="btnPause" class="iconBtn" aria-label="일시정지">
+          <svg width="16" height="18" viewBox="0 0 16 18" aria-hidden="true"><rect x="1" width="5" height="18" rx="1" fill="#fff"/><rect x="10" width="5" height="18" rx="1" fill="#fff"/></svg>
+        </button>
+      </div>
+      <div class="arena">
+        <div class="plate" id="monsterLogo"></div>
+        <div class="sealTag" id="sealTag" hidden>🔒 봉인</div>
+        <div class="hit" id="hitText" hidden></div>
+        <div class="tally" id="tally">공격 <b class="up">0</b><br>피해 <b class="dn">0</b></div>
+      </div>
+      <div class="chartwin">
+        <div class="row"><b id="priceNow">-</b><b id="pnlNow">보유 없음</b></div>
+        <div class="plot"><canvas id="chart"></canvas><div class="toast" id="tradeToast" hidden></div></div>
+      </div>
+    </div>
+    <div class="bottom">
+      <div>
+        <div class="row"><b id="playerName">나 · Lv.1</b><span id="playerHpText">-</span></div>
+        <div class="bar hpp"><i id="playerHpBar"></i></div>
+        <div class="dotInfo dn" id="dotInfo"></div>
+      </div>
+      <div class="ctl" id="ctl">
+        <button id="pctDown" class="step" aria-label="비율 낮추기">−</button>
+        <div class="val"><b id="pctVal">10%</b><small id="pctCap">최대 10%</small></div>
+        <button id="pctUp" class="step" aria-label="비율 높이기">+</button>
+        <div class="items" id="items"></div>
+      </div>
+      <div class="btns">
+        <button id="btnBuy" class="buy">사기<small id="buyHint">현금의 10%</small></button>
+        <button id="btnSell" class="sell">팔기<small id="sellHint">보유의 10%</small></button>
+      </div>
+    </div>
+
+    <div class="cover" id="countdown" hidden><div class="count" id="countNum">3</div><p class="dim" id="countNote"></p></div>
+    <div class="cover" id="pauseCover" hidden>
+      <div class="coverBox">
+        <div class="coverTitle">일시정지</div>
+        <p class="dim">그래프는 가려 둡니다.<br>다시 시작하면 3초를 센 뒤 이어집니다.</p>
+        <div class="act">
+          <button id="btnResume" class="pri">이어 하기</button>
+          <button id="btnForfeit" class="solid">전투 포기</button>
+        </div>
+      </div>
+    </div>
+    <div class="cover" id="itemChoice" hidden>
+      <div class="coverBox">
+        <div class="coverTitle">새 아이템 <span id="newItemName" class="gold"></span></div>
+        <p class="dim">아이템 칸이 찼습니다. 바꿀 아이템을 고르거나 버리세요.</p>
+        <div class="act" id="replaceList"></div>
+        <button id="btnDiscard" class="solid">새 아이템 버리기</button>
+      </div>
+    </div>
+    <div class="cover result" id="battleResult" hidden><div class="coverTitle" id="resultTitle"></div><p id="resultText"></p></div>
+    <div class="transition" id="transition" hidden><div class="sky" id="transitionSky"></div></div>
+  </section>
+
+  <!-- 리포트 -->
+  <section id="screen-report" class="screen full" hidden>
+    <div class="center">
+      <div class="reportTitle" id="reportTitle">GAME CLEAR</div>
+      <div class="dim" id="reportSub"></div>
+    </div>
+    <div class="card center">
+      <div class="reportFinal" id="reportFinal">-</div>
+      <div id="reportPnl">-</div>
+    </div>
+    <div class="stat3">
+      <div><small>매매 승률</small><b id="reportWin">-</b></div>
+      <div><small>크리티컬</small><b id="reportCrit">-</b></div>
+      <div><small>그냥 보유 대비</small><b id="reportHold">-</b></div>
+    </div>
+    <div class="row"><span class="dim small">단계별 공격/피해</span><span id="reportBadges"></span></div>
+    <div class="list" id="reportList"></div>
+    <div class="act">
+      <button id="btnSaveReport" class="pri">리포트 저장</button>
+      <div class="two"><button id="btnAgain" class="solid">다시 하기</button><button id="btnExit" class="solid">종료</button></div>
+    </div>
+  </section>
+
+  <!-- 단계 상세 -->
+  <section id="screen-stage" class="screen full" hidden>
+    <div class="row head"><b class="title" id="stageTitle">-</b><b id="stageResult"></b></div>
+    <div class="dim small" id="stageDates"></div>
+    <div class="stageChart"><canvas id="stageChart"></canvas></div>
+    <div class="stat3">
+      <div><small>공격량</small><b class="up" id="stageDealt">-</b></div>
+      <div><small>피해량</small><b class="dn" id="stageTaken">-</b></div>
+      <div><small>그냥 보유</small><b id="stageHold">-</b></div>
+    </div>
+    <div class="dim small">주요 순간</div>
+    <div class="list" id="stageMoments"></div>
+    <div class="act"><button id="btnStageBack" class="solid">← 리포트로</button></div>
+  </section>
+
+  <!-- 여정 -->
+  <section id="screen-journey" class="screen full" hidden>
+    <div class="row head"><b class="title">그동안의 여정</b><span class="dim" id="journeyCount"></span></div>
+    <div class="stat3" id="journeyBest"></div>
+    <div class="list" id="journeyList"></div>
+    <div class="empty" id="journeyEmpty" hidden>
+      <p>아직 여정이 없습니다.</p>
+      <button id="btnJourneyStart" class="pri">시작하기</button>
+    </div>
+    <div class="act">
+      <div class="two"><button id="btnExport" class="solid">백업 내보내기</button><label class="solid fileBtn">백업 불러오기<input type="file" id="importFile" accept="application/json,.json"></label></div>
+      <p class="dim small" id="backupMsg"></p>
+      <button id="btnJourneyBack" class="solid">← 처음으로</button>
+    </div>
+  </section>
+
+  <!-- 트로피 -->
+  <section id="screen-trophy" class="screen full" hidden>
+    <div class="row head"><b class="title">트로피와 메달</b><span class="dim" id="trophyCount"></span></div>
+    <div class="tabs" id="trophyTabs">
+      <button data-tab="trophy" class="on">트로피</button><button data-tab="medal">메달</button><button data-tab="dex">몬스터 도감</button>
+    </div>
+    <div class="list" id="trophyPane"></div>
+    <div class="detail" id="trophyDetail" hidden></div>
+    <div class="act"><button id="btnTrophyBack" class="solid">← 처음으로</button></div>
+  </section>
+
+  <div class="cover confirm" id="confirmBox" hidden>
+    <div class="coverBox">
+      <p id="confirmText"></p>
+      <div class="act two"><button id="confirmNo" class="solid">취소</button><button id="confirmYes" class="pri">확인</button></div>
+    </div>
+  </div>
+
+  <div class="rotate" id="rotate"><p>세로 화면으로 돌려 주세요</p></div>
+</div>
+
+<script src="data.js?v=dfd6c5c998"></script>
+<script src="js/format.js?v=624a40024e"></script>
+<script src="js/rules.js?v=c5b5cfdbc1"></script>
+<script src="js/meta.js?v=313395db73"></script>
+<script src="js/run.js?v=1e877af297"></script>
+<script src="js/report.js?v=9c7ac6174a"></script>
+<script src="js/achievements.js?v=e9226b5bf6"></script>
+<script src="js/saves.js?v=c3dbec6e18"></script>
+<script src="js/chart.js?v=4db7c9181b"></script>
+<script src="js/backgrounds.js?v=0a7d9de445"></script>
+<script src="js/battle-ui.js?v=64ca41423b"></script>
+<script src="js/screens-ui.js?v=ba5142e691"></script>
+<script src="js/app.js?v=19d78d857e"></script>
+</body>
+</html>
