@@ -171,6 +171,7 @@
   function setState(s) {
     UI.state = s;
     $('pauseCover').hidden = s !== 'paused';
+    $('briefing').hidden = s !== 'briefing';
     $('countdown').hidden = s !== 'countdown';
     if (battle()) renderControls();
   }
@@ -184,13 +185,19 @@
     countTimer = setInterval(() => {
       n -= 1;
       if (n <= 0) UI.finishCountdown();
-      else $('countNum').textContent = n;
+      else {
+        $('countNum').textContent = n;
+        Sound.play('tick');
+      }
     }, 1000);
   }
 
   UI.finishCountdown = () => {
     clearInterval(countTimer);
+    // 시험용: 브리핑 중에 부르면 브리핑을 건너뛴다.
+    if (UI.state === 'briefing') setState('countdown');
     if (UI.state !== 'countdown') return;
+    Sound.play('go');
     // 화면을 벗어난 사이에 카운트다운이 끝나면 일시정지로 둔다.
     if (document.hidden || isLandscape()) {
       setState('paused');
@@ -251,6 +258,7 @@
     $('resultTitle').className = `coverTitle ${b.result === 'win' ? 'gold' : 'dn'}`;
     $('resultText').textContent = text[1];
     $('battleResult').hidden = false;
+    Sound.play({ win: 'kill', timeout: 'timeout', dead: 'dead' }[b.result]);
     // 보상과 다음 단계를 결과 화면을 띄우기 전에 정하고 저장한다. 결과 화면 중 새로고침으로 드롭을 다시 굴리지 못하게 하기 위해서다.
     const out = Run.finishBattle(UI.run, rng);
     save();
@@ -310,7 +318,22 @@
     App.show('battle');
     renderStatic();
     render();
-    startCountdown('앞 20칸을 보고 준비하세요');
+    showBriefing();
+  }
+
+  // 전투 시작 브리핑: 시작 날짜, 시장 분위기, 시대 분위기를 보여 주고 버튼을 누르면 카운트다운으로 넘어간다.
+  function showBriefing() {
+    const b = battle();
+    const m = monsterOf(b.monsterId);
+    const market = m.board === 'US' ? 'US' : 'KR';
+    $('briefStage').textContent = `${UI.run.stage + 1}번째 몬스터 · ${BOARD_NAME[m.board]} · ${STARS[b.tier]}${b.sealed ? ' · 🔒 봉인' : ''}`;
+    $('briefName').textContent = m.name;
+    $('briefDate').textContent = `${Briefing.dateText(b.from)} 시작`;
+    const mood = Briefing.mood(b.mood);
+    $('briefMood').innerHTML = mood ? `<b class="${mood.cls}">${mood.label}</b>${mood.text}` : '';
+    const era = Briefing.era(b.from, market);
+    $('briefEra').innerHTML = era ? `<b>${era.name}</b><br>${era.note}` : '';
+    setState('briefing');
   }
 
   // 판 시작. 끝낸 판이 없으면 마지막 보스가 봉인된다.
@@ -349,7 +372,9 @@
     App.show('battle');
     renderStatic();
     render();
-    setState('paused');
+    // 아직 아무것도 하지 않은 첫 칸이면 브리핑부터 다시 보여 준다.
+    if (battle().cursor === Rules.CONFIG.preroll && !battle().buys.length) showBriefing();
+    else setState('paused');
   };
 
   // 몬스터를 쓰러뜨린 뒤 다음 회사의 배경 쪽으로 걸어 들어가는 전환. 동작 줄이기 설정이면 바로 끝난다.
@@ -372,6 +397,7 @@
     $('btnBuy').addEventListener('click', () => {
       if (UI.state !== 'running') return;
       const r = Rules.buy(player(), battle(), UI.pct);
+      if (r.ok) Sound.play('buy');
       if (r.ok) toast(`매수 ${Format.price(battle().prices[battle().cursor], monsterOf(battle().monsterId).currency)}`);
       save();
       render();
@@ -382,9 +408,11 @@
       const r = Rules.sell(player(), b, UI.pct, rng);
       if (r.ok) {
         if (r.pnl > 0) {
+          Sound.play(r.crit > 1 ? 'crit' : 'hit');
           hit(r.damage, r.crit);
           toast(`이익 ${Format.signed(r.pnl)}`, 'up');
         } else if (r.pnl < 0) {
+          Sound.play('hurt');
           hurt(true);
           toast(`손실 ${Format.signed(r.pnl)}${r.crit > 1 ? ` · 크리티컬 ×${r.crit}` : ''}`, 'dn');
         }
@@ -400,11 +428,28 @@
       if (!btn || UI.state !== 'running') return;
       const r = Rules.useItem(player(), battle(), player().items.indexOf(btn.dataset.kind));
       if (!r.ok) toast(r.reason === 'noHolding' ? '주식을 가지고 있을 때 쓸 수 있습니다' : '이미 아이템으로 바꾼 주식입니다');
-      else if (!r.foresight) toast(`가진 주식을 ${Rules.ITEMS[btn.dataset.kind].name}(으)로 바꿨습니다`, 'gold');
+      if (r.ok) Sound.play('item');
+      if (r.ok && !r.foresight) toast(`가진 주식을 ${Rules.ITEMS[btn.dataset.kind].name}(으)로 바꿨습니다`, 'gold');
       else if (r.foresight) toast(`예지: 5칸 뒤 ${{ up: '오른다 ▲', down: '내린다 ▼', flat: '그대로 ―' }[r.foresight]}`, r.foresight === 'up' ? 'up' : 'dn');
       save();
       render();
     });
+    $('btnBriefStart').addEventListener('click', () => { if (UI.state === 'briefing') startCountdown(''); });
+    const renderSound = () => {
+      const on = Sound.enabled;
+      $('btnSound').textContent = on ? '🔊' : '🔇';
+      $('btnSound').setAttribute('aria-label', on ? '소리 끄기' : '소리 켜기');
+      $('btnSoundPause').textContent = on ? '🔊 소리 켜짐' : '🔇 소리 꺼짐';
+      $('btnSoundPause').setAttribute('aria-label', on ? '소리 끄기' : '소리 켜기');
+    };
+    const toggleSound = () => {
+      Sound.setEnabled(!Sound.enabled);
+      renderSound();
+      Sound.play('buy');
+    };
+    $('btnSound').addEventListener('click', toggleSound);
+    $('btnSoundPause').addEventListener('click', toggleSound);
+    renderSound();
     $('btnPause').addEventListener('click', UI.pause);
     $('btnResume').addEventListener('click', UI.resume);
     $('btnForfeit').addEventListener('click', () => {

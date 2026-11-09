@@ -35,7 +35,7 @@
   function newBattle(player, monsterId, tier, segment, monsterMax) {
     const t = CONFIG.tiers[tier];
     return {
-      monsterId, tier, prices: segment.prices, from: segment.from, to: segment.to,
+      monsterId, tier, prices: segment.prices, from: segment.from, to: segment.to, mood: segment.mood || null,
       cursor: CONFIG.preroll, monsterMax, monsterHp: monsterMax, dot: t.dot,
       lot: null, earned: 0, lost: 0, dealt: 0, taken: 0, sells: 0, wins: 0, manualSells: 0, manualWins: 0, crits: 0,
       boughtAt: -1, soldAt: -1, startMaxHp: player.maxHp, itemsUsed: [], events: [], buys: [], sales: [], minHpRatio: 1, result: null,

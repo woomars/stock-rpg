@@ -177,3 +177,14 @@ html, body, #app, canvas { touch-action: manipulation; }
 .items .count { position: absolute; right: 3px; top: 2px; min-width: 16px; height: 16px; border-radius: 8px; background: #fff; color: #111; font-size: 11px; line-height: 16px; font-weight: 800; text-align: center; }
 .noItems { align-self: center; color: var(--ink2); font-size: 12px; padding-left: 4px; }
 .holdInfo.gold { color: var(--gold); }
+/* 브리핑 카드와 소리 버튼 */
+#briefing { background: rgba(5, 4, 12, .9); }
+.brief { gap: 8px; max-width: 340px; margin: 0 auto; }
+.briefName { font-size: 24px; font-weight: 900; }
+.briefDate { font-size: 20px; font-weight: 800; }
+.briefMood { font-size: 15px; }
+.briefMood b { display: inline-block; padding: 1px 8px; border-radius: 6px; background: #221f38; margin-right: 6px; }
+.briefEra { font-size: 13px; color: var(--ink2); line-height: 1.45; }
+.briefEra b { color: var(--ink); }
+.briefGo { height: 52px; border: 0; border-radius: 10px; font-size: 17px; font-weight: 800; background: var(--buy); color: #fff; margin-top: 4px; }
+.soundCorner { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 12px; z-index: 2; font-size: 18px; }

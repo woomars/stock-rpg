@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="목숨걸고 투자">
-<link rel="stylesheet" href="style.css?v=296a5f8fb0">
+<link rel="stylesheet" href="style.css?v=9f713abf8d">
 </head>
 <body>
 <div id="app">
@@ -18,6 +18,7 @@
   <!-- 시작 -->
   <section id="screen-start" class="screen scene">
     <div class="sky" data-board="KOSDAQ"></div>
+    <button id="btnSound" class="iconBtn soundCorner" aria-label="소리 끄기">🔊</button>
     <div class="startTitle">
       <div class="gold eyebrow" id="startSub">초기 자금 천만 원</div>
       <h1>목숨걸고<br>투자</h1>
@@ -87,6 +88,17 @@
       </div>
     </div>
 
+    <div class="cover" id="briefing" hidden>
+      <div class="coverBox brief">
+        <div class="dim small" id="briefStage"></div>
+        <div class="briefName" id="briefName"></div>
+        <div class="briefDate gold" id="briefDate"></div>
+        <div class="briefMood" id="briefMood"></div>
+        <div class="briefEra" id="briefEra"></div>
+        <p class="dim small">앞 20칸의 그래프는 시작 뒤 3초 동안 볼 수 있습니다.</p>
+        <button id="btnBriefStart" class="pri briefGo">전투 시작</button>
+      </div>
+    </div>
     <div class="cover" id="countdown" hidden><div class="count" id="countNum">3</div><p class="dim" id="countNote"></p></div>
     <div class="cover" id="pauseCover" hidden>
       <div class="coverBox">
@@ -95,6 +107,7 @@
         <div class="act">
           <button id="btnResume" class="pri">이어 하기</button>
           <button id="btnForfeit" class="solid">전투 포기</button>
+          <button id="btnSoundPause" class="solid soundBtn" aria-label="소리 끄기">🔊 소리 켜짐</button>
         </div>
       </div>
     </div>
@@ -186,17 +199,19 @@
   <div class="rotate" id="rotate"><p>세로 화면으로 돌려 주세요</p></div>
 </div>
 
-<script src="data.js?v=fcd10a600c"></script>
+<script src="data.js?v=1f3065efdf"></script>
 <script src="js/format.js?v=5c1d1f4135"></script>
-<script src="js/rules.js?v=394838a622"></script>
+<script src="js/rules.js?v=1eb01b953e"></script>
 <script src="js/meta.js?v=313395db73"></script>
 <script src="js/run.js?v=1e877af297"></script>
 <script src="js/report.js?v=68f744bf18"></script>
 <script src="js/achievements.js?v=e9226b5bf6"></script>
 <script src="js/saves.js?v=db6fd1ae4c"></script>
 <script src="js/chart.js?v=4db7c9181b"></script>
+<script src="js/briefing.js?v=b42e86fb37"></script>
+<script src="js/sound.js?v=dfbd41140d"></script>
 <script src="js/backgrounds.js?v=0a7d9de445"></script>
-<script src="js/battle-ui.js?v=093ff8758d"></script>
+<script src="js/battle-ui.js?v=49a6c3f656"></script>
 <script src="js/screens-ui.js?v=9498b032bf"></script>
 <script src="js/app.js?v=19d78d857e"></script>
 </body>
