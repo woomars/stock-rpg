@@ -98,8 +98,6 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .items { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
 .items button { position: relative; font-size: 13px; padding: 0 2px; line-height: 1.1; }
 .items button.on { background: #5b4300; border: 2px solid var(--gold); color: var(--gold); }
-.ctl.many { grid-template-columns: 44px 1fr 44px; }
-.ctl.many .items { grid-column: 1 / -1; grid-row: 2; }
 .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .btns button { height: 64px; border: 0; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; font-size: 21px; color: #fff; }
 .btns button:active:not(:disabled) { filter: brightness(.8); }
@@ -171,3 +169,11 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 html, body, #app, canvas { touch-action: manipulation; }
 .awards { display: flex; gap: 6px; overflow-x: auto; flex: none; scrollbar-width: none; }
 .awards span { flex: none; background: #3a3657; border-radius: 6px; padding: 3px 7px; font-size: 12px; white-space: nowrap; }
+/* 아이템 줄: 크기 고정, 종류별 버튼과 개수 */
+.ctl { grid-template-columns: 44px 56px 44px minmax(0, 1fr); }
+.items { display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; height: 48px; scrollbar-width: none; }
+.items::-webkit-scrollbar { display: none; }
+.items button { flex: 0 0 62px; height: 48px; padding: 0 4px; font-size: 12px; }
+.items .count { position: absolute; right: 3px; top: 2px; min-width: 16px; height: 16px; border-radius: 8px; background: #fff; color: #111; font-size: 11px; line-height: 16px; font-weight: 800; text-align: center; }
+.noItems { align-self: center; color: var(--ink2); font-size: 12px; padding-left: 4px; }
+.holdInfo.gold { color: var(--gold); }

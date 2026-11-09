@@ -67,12 +67,14 @@
       pnl.textContent = `${Format.signed(u)} (${Format.pct(u / b.lot.cost)})`;
       pnl.className = u > 0 ? 'up' : u < 0 ? 'dn' : '';
     } else {
-      pnl.textContent = b.nextLot ? `${Rules.ITEMS[b.nextLot.id].name} 대기 중` : '보유 없음';
-      pnl.className = b.nextLot ? 'gold' : 'dim';
+      pnl.textContent = '보유 없음';
+      pnl.className = 'dim';
     }
+    const conv = b.lot && b.lot.convPrice ? `${Rules.ITEMS[b.lot.item].name} · ` : '';
     $('holdInfo').textContent = b.lot
-      ? `보유 ${Format.shares(b.lot.qty)} · 평단 ${Format.price(b.lot.avg, m.currency)} · 평가 ${Format.money(b.lot.cost + u)}`
+      ? `${conv}보유 ${Format.shares(b.lot.qty)} · 평단 ${Format.price(b.lot.avg, m.currency)} · 평가 ${Format.money(b.lot.cost + u)}`
       : `보유 없음 · 현금 ${Format.money(Rules.cash(p, b))}`;
+    $('holdInfo').classList.toggle('gold', Boolean(conv));
     $('playerName').textContent = `나 · Lv.${Rules.levelFor(p.maxHp)}`;
     $('playerHpText').textContent = `${Format.money(Math.max(0, p.hp))} / ${Format.money(p.maxHp)}`;
     $('playerHpBar').style.width = `${Math.max(0, Math.min(1, p.hp / p.maxHp)) * 100}%`;
@@ -92,28 +94,35 @@
     $('pctUp').disabled = UI.pct >= c;
     const running = UI.state === 'running';
     const amount = Rules.cash(player(), b) * UI.pct / 100;
-    $('btnBuy').disabled = !running || b.boughtAt === b.cursor || amount < Rules.CONFIG.minOrder;
+    $('btnBuy').disabled = !running || b.boughtAt === b.cursor || amount < Rules.CONFIG.minOrder || Boolean(b.lot && b.lot.convPrice);
     $('btnSell').disabled = !running || !b.lot || b.soldAt === b.cursor;
     // 이번에 사고팔 주수와 금액을 버튼에 적는다. 팔기는 끝수가 남으면 전량이 된다.
     const price = b.prices[b.cursor];
     $('buyHint').textContent = amount >= Rules.CONFIG.minOrder ? `${Format.shares(amount / price)} · 약 ${Format.money(amount)}` : '현금 부족';
+    if (b.lot && b.lot.convPrice) {
+      $('buyHint').textContent = '전량 판 뒤 매수';
+    }
     if (b.lot) {
-      const all = b.lot.cost * (1 - UI.pct / 100) < Rules.CONFIG.minOrder;
+      const all = Boolean(b.lot.convPrice) || b.lot.cost * (1 - UI.pct / 100) < Rules.CONFIG.minOrder;
       const f = all ? 1 : UI.pct / 100;
       $('sellHint').textContent = `${all ? '전량 ' : ''}${Format.shares(b.lot.qty * f)} · 약 ${Format.money((b.lot.cost + Rules.unrealized(b)) * f)}`;
     } else {
       $('sellHint').textContent = '보유 없음';
     }
+    // 같은 종류는 버튼 하나로 묶고 개수를 작게 적는다. 아이템 줄의 크기는 고정이라 개수가 바뀌어도 배치가 움직이지 않는다.
     const items = player().items;
-    const armed = b.nextLot || (b.lot && (b.lot.mult !== 1 || b.lot.dir !== 1) ? { id: b.lot.dir < 0 ? (b.lot.mult > 1 ? 'inv2' : 'inv') : `x${b.lot.mult}` } : null);
-    let html = armed ? `<button class="on" disabled>${Rules.ITEMS[armed.id].name}<br><small>사용 중</small></button>` : '';
-    html += items.map((id, i) => `<button data-item="${i}" ${running ? '' : 'disabled'}>${Rules.ITEMS[id].name}</button>`).join('');
+    const kinds = Object.keys(Rules.ITEMS).filter((id) => items.includes(id));
+    const canConvert = Boolean(b.lot) && !b.lot.convPrice;
+    const html = kinds.map((id) => {
+      const usable = running && (id === 'foresee' || canConvert);
+      const n = items.filter((x) => x === id).length;
+      return `<button data-kind="${id}" ${usable ? '' : 'disabled'}>${Rules.ITEMS[id].name}<span class="count">${n}</span></button>`;
+    }).join('') || '<span class="noItems">아이템 없음</span>';
     // 칸마다 버튼을 새로 만들면 칸이 넘어가는 순간의 터치가 사라지므로, 바뀐 경우에만 다시 그린다.
     if (html !== itemsHtml) {
       $('items').innerHTML = html;
       itemsHtml = html;
     }
-    $('ctl').classList.toggle('many', items.length + (armed ? 1 : 0) > 3);
   }
 
   function drawChart() {
@@ -387,10 +396,11 @@
     $('pctDown').addEventListener('click', () => { UI.pct -= 10; renderControls(); });
     $('pctUp').addEventListener('click', () => { UI.pct += 10; renderControls(); });
     $('items').addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-item]');
+      const btn = e.target.closest('[data-kind]');
       if (!btn || UI.state !== 'running') return;
-      const r = Rules.useItem(player(), battle(), Number(btn.dataset.item));
-      if (!r.ok) toast(r.reason === 'holding' ? '보유가 없을 때만 쓸 수 있습니다' : '이미 걸어 둔 아이템이 있습니다');
+      const r = Rules.useItem(player(), battle(), player().items.indexOf(btn.dataset.kind));
+      if (!r.ok) toast(r.reason === 'noHolding' ? '주식을 가지고 있을 때 쓸 수 있습니다' : '이미 아이템으로 바꾼 주식입니다');
+      else if (!r.foresight) toast(`가진 주식을 ${Rules.ITEMS[btn.dataset.kind].name}(으)로 바꿨습니다`, 'gold');
       else if (r.foresight) toast(`예지: 5칸 뒤 ${{ up: '오른다 ▲', down: '내린다 ▼', flat: '그대로 ―' }[r.foresight]}`, r.foresight === 'up' ? 'up' : 'dn');
       save();
       render();

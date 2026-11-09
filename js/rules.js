@@ -37,7 +37,7 @@
     return {
       monsterId, tier, prices: segment.prices, from: segment.from, to: segment.to,
       cursor: CONFIG.preroll, monsterMax, monsterHp: monsterMax, dot: t.dot,
-      lot: null, nextLot: null, earned: 0, lost: 0, dealt: 0, taken: 0, sells: 0, wins: 0, manualSells: 0, manualWins: 0, crits: 0,
+      lot: null, earned: 0, lost: 0, dealt: 0, taken: 0, sells: 0, wins: 0, manualSells: 0, manualWins: 0, crits: 0,
       boughtAt: -1, soldAt: -1, startMaxHp: player.maxHp, itemsUsed: [], events: [], buys: [], sales: [], minHpRatio: 1, result: null,
     };
   }
@@ -51,7 +51,10 @@
   function unrealized(battle) {
     const lot = battle.lot;
     if (!lot) return 0;
-    const raw = lot.cost * (price(battle) / lot.avg - 1) * lot.mult * lot.dir;
+    // 아이템으로 바꾼 주식: 바꾸기 전 평가손익(base)은 1배로 두고, 바꾼 가격(convPrice) 뒤의 움직임만 배수와 방향을 곱한다.
+    const raw = lot.convPrice
+      ? lot.base + lot.qty * (price(battle) - lot.convPrice) * lot.mult * lot.dir
+      : lot.qty * price(battle) - lot.cost;
     return Math.max(raw, -lot.cost);
   }
 
@@ -63,6 +66,7 @@
     if (battle.result) return { ok: false, reason: 'ended' };
     if (!validPct(player, pct)) return { ok: false, reason: 'pctCap' };
     if (battle.boughtAt === battle.cursor) return { ok: false, reason: 'thisCell' };
+    if (battle.lot && battle.lot.convPrice) return { ok: false, reason: 'converted' };
     const amount = cash(player, battle) * pct / 100;
     if (amount < CONFIG.minOrder) return { ok: false, reason: 'noCash' };
     const p = price(battle);
@@ -74,9 +78,7 @@
       lot.cost += amount;
       lot.qty = qty;
     } else {
-      const armed = battle.nextLot || { mult: 1, dir: 1 };
-      battle.lot = { cost: amount, qty: amount / p, avg: p, mult: armed.mult, dir: armed.dir };
-      battle.nextLot = null;
+      battle.lot = { cost: amount, qty: amount / p, avg: p, mult: 1, dir: 1 };
     }
     battle.boughtAt = battle.cursor;
     return { ok: true };
@@ -115,6 +117,7 @@
     } else {
       lot.cost *= 1 - fraction;
       lot.qty *= 1 - fraction;
+      if (lot.convPrice) lot.base *= 1 - fraction;
     }
     return { pnl, crit, damage };
   }
@@ -137,7 +140,8 @@
     const lot = battle.lot;
     if (!lot) return { ok: false, reason: 'noHolding' };
     if (battle.soldAt === battle.cursor) return { ok: false, reason: 'thisCell' };
-    const fraction = lot.cost * (1 - pct / 100) < CONFIG.minOrder ? 1 : pct / 100;
+    // 아이템으로 바꾼 주식은 한 번에 전량 판다. 끝수만 남아도 전량 판다.
+    const fraction = lot.convPrice || lot.cost * (1 - pct / 100) < CONFIG.minOrder ? 1 : pct / 100;
     const out = realize(player, battle, fraction, rng);
     // 자동 매도와 구분해 직접 누른 매도만 센다. 매매 승률과 원샷 메달이 쓴다.
     battle.manualSells = (battle.manualSells || 0) + 1;
@@ -214,11 +218,17 @@
       battle.itemsUsed.push(item.id);
       return { ok: true, foresight: foresight(battle) };
     }
-    if (battle.lot) return { ok: false, reason: 'holding' };
-    if (battle.nextLot) return { ok: false, reason: 'armed' };
+    // 배수·방향 아이템은 가진 주식을 같은 수량 그대로 바꾼다. 다 팔 때까지 더 살 수 없다.
+    const lot = battle.lot;
+    if (!lot) return { ok: false, reason: 'noHolding' };
+    if (lot.convPrice) return { ok: false, reason: 'converted' };
+    lot.base = unrealized(battle);
+    lot.convPrice = price(battle);
+    lot.mult = item.mult;
+    lot.dir = item.dir;
+    lot.item = item.id;
     player.items.splice(index, 1);
     battle.itemsUsed.push(item.id);
-    battle.nextLot = { id: item.id, mult: item.mult, dir: item.dir };
     return { ok: true };
   }
 
