@@ -4,7 +4,9 @@
   const $ = (id) => document.getElementById(id);
   const TICK_MS = 700;
   const COUNTDOWN = 3;
-  const BOARD_NAME = { KOSDAQ: '코스닥', KOSPI: '코스피', US: 'S&P' };
+  const t = (key, p) => I18n.t(key, p);
+  const boardName = (board) => t(`board.${board}`);
+  const itemName = (id) => I18n.item(Rules.ITEMS[id]);
   const STARS = { 1: '★☆☆', 2: '★★☆', 3: '★★★' };
   const TEST = typeof location !== 'undefined' && /[?&]test\b/.test(location.search);
 
@@ -34,17 +36,19 @@
   // ---------- 그리기 ----------
 
   function logoHtml(m) {
-    if (m.logo) return `<img src="${m.logo}" alt="" onerror="this.parentNode.textContent='${m.name[0]}'">`;
-    return m.name[0];
+    const first = I18n.monster(m).name[0];
+    if (m.logo) return `<img src="${m.logo}" alt="" onerror="this.parentNode.textContent='${first}'">`;
+    return first;
   }
 
   function renderStatic() {
     const b = battle();
     const m = monsterOf(b.monsterId);
-    $('monsterName').textContent = m.name;
+    const name = I18n.monster(m).name;
+    $('monsterName').textContent = name;
     $('monsterLogo').innerHTML = logoHtml(m);
-    $('monsterLabel').querySelector('b').textContent = m.name;
-    $('monsterLabel').querySelector('small').textContent = `${BOARD_NAME[m.board]} · 시총 ${Format.money(m.marketCapKrw)}`;
+    $('monsterLabel').querySelector('b').textContent = name;
+    $('monsterLabel').querySelector('small').textContent = t('battle.label', { board: boardName(m.board), cap: Format.money(m.marketCapKrw) });
     $('sealTag').hidden = !b.sealed;
     document.querySelector('.battleScene').dataset.board = m.board;
     if (globalThis.Backgrounds) $('battleSky').innerHTML = Backgrounds.svg(m.board);
@@ -56,10 +60,10 @@
     const p = player();
     const m = monsterOf(b.monsterId);
     const left = b.prices.length - 1 - b.cursor;
-    $('stageInfo').textContent = `${UI.run.stage + 1} / 10 · ${BOARD_NAME[m.board]} · ${STARS[b.tier]} · ${left}칸 남음`;
+    $('stageInfo').textContent = t('battle.stageInfo', { stage: UI.run.stage + 1, board: boardName(m.board), stars: STARS[b.tier], left });
     $('monsterHpText').textContent = `${Format.money(Math.max(0, b.monsterHp))} / ${Format.money(b.monsterMax)}`;
     $('monsterHpBar').style.width = `${Math.max(0, b.monsterHp / b.monsterMax) * 100}%`;
-    $('tally').innerHTML = `공격 <b class="up">${Format.money(b.dealt)}</b><br>피해 <b class="dn">${Format.money(b.taken)}</b>`;
+    $('tally').innerHTML = `${t('battle.dealt')} <b class="up">${Format.money(b.dealt)}</b><br>${t('battle.taken')} <b class="dn">${Format.money(b.taken)}</b>`;
     $('priceNow').textContent = Format.price(b.prices[b.cursor], m.currency);
     const u = Rules.unrealized(b);
     const pnl = $('pnlNow');
@@ -67,19 +71,19 @@
       pnl.textContent = `${Format.signed(u)} (${Format.pct(u / b.lot.cost)})`;
       pnl.className = u > 0 ? 'up' : u < 0 ? 'dn' : '';
     } else {
-      pnl.textContent = '보유 없음';
+      pnl.textContent = t('battle.noHolding');
       pnl.className = 'dim';
     }
-    const conv = b.lot && b.lot.convPrice ? `${Rules.ITEMS[b.lot.item].name} · ` : '';
+    const conv = b.lot && b.lot.convPrice ? `${itemName(b.lot.item)} · ` : '';
     $('holdInfo').textContent = b.lot
-      ? `${conv}보유 ${Format.shares(b.lot.qty)} · 평단 ${Format.price(b.lot.avg, m.currency)} · 평가 ${Format.money(b.lot.cost + u)}`
-      : `보유 없음 · 현금 ${Format.money(Rules.cash(p, b))}`;
+      ? t('battle.hold', { conv, shares: Format.shares(b.lot.qty), avg: Format.price(b.lot.avg, m.currency), value: Format.money(b.lot.cost + u) })
+      : t('battle.cashOnly', { cash: Format.money(Rules.cash(p, b)) });
     $('holdInfo').classList.toggle('gold', Boolean(conv));
-    $('playerName').textContent = `나 · Lv.${Rules.levelFor(p.maxHp)}`;
+    $('playerName').textContent = t('battle.player', { n: Rules.levelFor(p.maxHp) });
     $('playerHpText').textContent = `${Format.money(Math.max(0, p.hp))} / ${Format.money(p.maxHp)}`;
     $('playerHpBar').style.width = `${Math.max(0, Math.min(1, p.hp / p.maxHp)) * 100}%`;
     const dot = u < 0 ? -u * b.dot * (1 - (p.mods || Rules.NO_MODS).dotResist) : 0;
-    $('dotInfo').textContent = dot > 0 ? `물린 동안 도트 ${Format.signed(-dot)}/칸 (×${b.dot})` : '';
+    $('dotInfo').textContent = dot > 0 ? t('battle.dot', { amount: Format.signed(-dot), mult: b.dot }) : '';
     renderControls();
     drawChart();
   }
@@ -89,7 +93,7 @@
     const c = cap();
     UI.pct = Math.min(Math.max(10, UI.pct), c);
     $('pctVal').textContent = `${UI.pct}%`;
-    $('pctCap').textContent = `최대 ${c}%`;
+    $('pctCap').textContent = t('battle.cap', { n: c });
     $('pctDown').disabled = UI.pct <= 10;
     $('pctUp').disabled = UI.pct >= c;
     const running = UI.state === 'running';
@@ -98,16 +102,17 @@
     $('btnSell').disabled = !running || !b.lot || b.soldAt === b.cursor;
     // 이번에 사고팔 주수와 금액을 버튼에 적는다. 팔기는 끝수가 남으면 전량이 된다.
     const price = b.prices[b.cursor];
-    $('buyHint').textContent = amount >= Rules.CONFIG.minOrder ? `${Format.shares(amount / price)} · 약 ${Format.money(amount)}` : '현금 부족';
+    $('buyHint').textContent = amount >= Rules.CONFIG.minOrder ? t('battle.hint', { shares: Format.shares(amount / price), money: Format.money(amount) }) : t('battle.noCash');
     if (b.lot && b.lot.convPrice) {
-      $('buyHint').textContent = '전량 판 뒤 매수';
+      $('buyHint').textContent = t('battle.sellFirst');
     }
     if (b.lot) {
       const all = Boolean(b.lot.convPrice) || b.lot.cost * (1 - UI.pct / 100) < Rules.CONFIG.minOrder;
       const f = all ? 1 : UI.pct / 100;
-      $('sellHint').textContent = `${all ? '전량 ' : ''}${Format.shares(b.lot.qty * f)} · 약 ${Format.money((b.lot.cost + Rules.unrealized(b)) * f)}`;
+      const hint = t('battle.hint', { shares: Format.shares(b.lot.qty * f), money: Format.money((b.lot.cost + Rules.unrealized(b)) * f) });
+      $('sellHint').textContent = all ? t('battle.sellAll', { hint }) : hint;
     } else {
-      $('sellHint').textContent = '보유 없음';
+      $('sellHint').textContent = t('battle.noHolding');
     }
     // 같은 종류는 버튼 하나로 묶고 개수를 작게 적는다. 아이템 줄의 크기는 고정이라 개수가 바뀌어도 배치가 움직이지 않는다.
     const items = player().items;
@@ -116,8 +121,8 @@
     const html = kinds.map((id) => {
       const usable = running && (id === 'foresee' || canConvert);
       const n = items.filter((x) => x === id).length;
-      return `<button data-kind="${id}" ${usable ? '' : 'disabled'}>${Rules.ITEMS[id].name}<span class="count">${n}</span></button>`;
-    }).join('') || '<span class="noItems">아이템 없음</span>';
+      return `<button data-kind="${id}" ${usable ? '' : 'disabled'}>${itemName(id)}<span class="count">${n}</span></button>`;
+    }).join('') || `<span class="noItems">${t('battle.noItems')}</span>`;
     // 칸마다 버튼을 새로 만들면 칸이 넘어가는 순간의 터치가 사라지므로, 바뀐 경우에만 다시 그린다.
     if (html !== itemsHtml) {
       $('items').innerHTML = html;
@@ -137,17 +142,17 @@
   }
 
   function toast(text, cls = '') {
-    const t = $('tradeToast');
-    t.textContent = text;
-    t.className = `toast ${cls}`;
-    t.hidden = false;
+    const box = $('tradeToast');
+    box.textContent = text;
+    box.className = `toast ${cls}`;
+    box.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.hidden = true; }, 1600);
+    toastTimer = setTimeout(() => { box.hidden = true; }, 1600);
   }
 
   function hit(damage, crit) {
     const el = $('hitText');
-    el.innerHTML = `${crit > 1 ? `<small>크리티컬 ×${crit}</small>` : ''}${Format.signed(-damage)}`;
+    el.innerHTML = `${crit > 1 ? `<small>${t('battle.crit', { n: crit })}</small>` : ''}${Format.signed(-damage)}`;
     el.hidden = false;
     el.style.animation = 'none';
     void el.offsetWidth;
@@ -254,7 +259,8 @@
   function endBattle() {
     const b = battle();
     setState('result');
-    const text = { win: ['처치!', `${monsterOf(b.monsterId).name}을(를) 쓰러뜨렸습니다`], timeout: ['시간 초과', `남은 체력만큼 피해를 입었습니다`], dead: ['사망', '계좌가 바닥났습니다'] }[b.result];
+    const name = I18n.monster(monsterOf(b.monsterId)).name;
+    const text = [t(`result.${b.result}`), t(`result.${b.result}Text`, { name })];
     $('resultTitle').textContent = text[0];
     $('resultTitle').className = `coverTitle ${b.result === 'win' ? 'gold' : 'dn'}`;
     $('resultText').textContent = text[1];
@@ -263,7 +269,7 @@
     // 보상과 다음 단계를 결과 화면을 띄우기 전에 정하고 저장한다. 결과 화면 중 새로고침으로 드롭을 다시 굴리지 못하게 하기 위해서다.
     const out = Run.finishBattle(UI.run, rng);
     save();
-    if (out.item) $('resultText').textContent += UI.run.pendingItem ? '' : ` · 아이템 ${Rules.ITEMS[out.item].name}`;
+    if (out.item) $('resultText').textContent += UI.run.pendingItem ? '' : t('result.item', { item: itemName(out.item) });
     settling = true;
     settleTimer = setTimeout(UI.settle, UI.fast ? 60000 : 1400);
   }
@@ -282,8 +288,8 @@
   };
 
   function askItem() {
-    $('newItemName').textContent = Rules.ITEMS[UI.run.pendingItem].name;
-    $('replaceList').innerHTML = player().items.map((id, i) => `<button data-replace="${i}" class="solid">${Rules.ITEMS[id].name} 대신</button>`).join('');
+    $('newItemName').textContent = itemName(UI.run.pendingItem);
+    $('replaceList').innerHTML = player().items.map((id, i) => `<button data-replace="${i}" class="solid">${t('item.replace', { item: itemName(id) })}</button>`).join('');
     $('itemChoice').hidden = false;
   }
 
@@ -324,18 +330,24 @@
 
   // 전투 시작 브리핑: 시작 날짜, 시장 분위기, 시대 분위기를 보여 주고 버튼을 누르면 카운트다운으로 넘어간다.
   function showBriefing() {
+    fillBriefing();
+    setState('briefing');
+  }
+
+  function fillBriefing() {
     const b = battle();
     const m = monsterOf(b.monsterId);
     const market = m.board === 'US' ? 'US' : 'KR';
-    $('briefStage').textContent = `${UI.run.stage + 1}번째 몬스터 · ${BOARD_NAME[m.board]} · ${STARS[b.tier]}${b.sealed ? ' · 🔒 봉인' : ''}`;
-    $('briefName').textContent = m.name;
-    $('briefDesc').textContent = m.desc || '';
-    $('briefDate').textContent = `${Briefing.dateText(b.from)} 시작`;
+    const sealed = b.sealed ? ` · ${t('battle.sealed')}` : '';
+    $('briefStage').textContent = t('brief.stage', { n: UI.run.stage + 1, board: boardName(m.board), stars: STARS[b.tier] }) + sealed;
+    const local = I18n.monster(m);
+    $('briefName').textContent = local.name;
+    $('briefDesc').textContent = local.desc;
+    $('briefDate').textContent = t('brief.date', { date: Briefing.dateText(b.from) });
     const mood = Briefing.mood(b.mood);
     $('briefMood').innerHTML = mood ? `<b class="${mood.cls}">${mood.label}</b>${mood.text}` : '';
     const era = Briefing.era(b.from, market);
     $('briefEra').innerHTML = era ? `<b>${era.name}</b><br>${era.note}` : '';
-    setState('briefing');
   }
 
   // 판 시작. 끝낸 판이 없으면 마지막 보스가 봉인된다.
@@ -400,7 +412,7 @@
       if (UI.state !== 'running') return;
       const r = Rules.buy(player(), battle(), UI.pct);
       if (r.ok) Sound.play('buy');
-      if (r.ok) toast(`매수 ${Format.price(battle().prices[battle().cursor], monsterOf(battle().monsterId).currency)}`);
+      if (r.ok) toast(t('battle.bought', { price: Format.price(battle().prices[battle().cursor], monsterOf(battle().monsterId).currency) }));
       save();
       render();
     });
@@ -412,11 +424,11 @@
         if (r.pnl > 0) {
           Sound.play(r.crit > 1 ? 'crit' : 'hit');
           hit(r.damage, r.crit);
-          toast(`이익 ${Format.signed(r.pnl)}`, 'up');
+          toast(t('battle.profit', { pnl: Format.signed(r.pnl) }), 'up');
         } else if (r.pnl < 0) {
           Sound.play('hurt');
           hurt(true);
-          toast(`손실 ${Format.signed(r.pnl)}${r.crit > 1 ? ` · 크리티컬 ×${r.crit}` : ''}`, 'dn');
+          toast(`${t('battle.loss', { pnl: Format.signed(r.pnl) })}${r.crit > 1 ? ` · ${t('battle.crit', { n: r.crit })}` : ''}`, 'dn');
         }
       }
       save();
@@ -429,10 +441,10 @@
       const btn = e.target.closest('[data-kind]');
       if (!btn || UI.state !== 'running') return;
       const r = Rules.useItem(player(), battle(), player().items.indexOf(btn.dataset.kind));
-      if (!r.ok) toast(r.reason === 'noHolding' ? '주식을 가지고 있을 때 쓸 수 있습니다' : '이미 아이템으로 바꾼 주식입니다');
+      if (!r.ok) toast(r.reason === 'noHolding' ? t('battle.needHolding') : t('battle.alreadyConverted'));
       if (r.ok) Sound.play('item');
-      if (r.ok && !r.foresight) toast(`가진 주식을 ${Rules.ITEMS[btn.dataset.kind].name}(으)로 바꿨습니다`, 'gold');
-      else if (r.foresight) toast(`예지: 5칸 뒤 ${{ up: '오른다 ▲', down: '내린다 ▼', flat: '그대로 ―' }[r.foresight]}`, r.foresight === 'up' ? 'up' : 'dn');
+      if (r.ok && !r.foresight) toast(t('battle.converted', { item: itemName(btn.dataset.kind) }), 'gold');
+      else if (r.foresight) toast(t('battle.foresight', { dir: t(`battle.${r.foresight}`) }), r.foresight === 'up' ? 'up' : 'dn');
       save();
       render();
     });
@@ -440,9 +452,9 @@
     const renderSound = () => {
       const on = Sound.enabled;
       $('btnSound').textContent = on ? '🔊' : '🔇';
-      $('btnSound').setAttribute('aria-label', on ? '소리 끄기' : '소리 켜기');
-      $('btnSoundPause').textContent = on ? '🔊 소리 켜짐' : '🔇 소리 꺼짐';
-      $('btnSoundPause').setAttribute('aria-label', on ? '소리 끄기' : '소리 켜기');
+      $('btnSound').setAttribute('aria-label', on ? t('sound.off') : t('sound.on'));
+      $('btnSoundPause').textContent = on ? t('sound.onState') : t('sound.offState');
+      $('btnSoundPause').setAttribute('aria-label', on ? t('sound.off') : t('sound.on'));
     };
     const toggleSound = () => {
       Sound.setEnabled(!Sound.enabled);
@@ -452,6 +464,15 @@
     $('btnSound').addEventListener('click', toggleSound);
     $('btnSoundPause').addEventListener('click', toggleSound);
     renderSound();
+    // 언어를 바꾸면(시작 화면, 일시정지 화면) 판을 멈춘 채로 글자만 다시 그린다.
+    I18n.onChange(() => {
+      renderSound();
+      if (!battle() || App.current !== 'battle') return;
+      itemsHtml = '';
+      renderStatic();
+      render();
+      if (UI.state === 'briefing') fillBriefing();
+    });
     $('btnPause').addEventListener('click', UI.pause);
     $('btnResume').addEventListener('click', UI.resume);
     $('btnForfeit').addEventListener('click', () => {

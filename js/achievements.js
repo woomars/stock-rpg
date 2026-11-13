@@ -27,10 +27,11 @@
     return best;
   }
 
+  // group은 화면 문구 키(group.*)다. 이름과 설명의 영어·일본어는 i18n.js의 ACH에 있다.
   const trophy = (group) => (id, name, desc, tier, test, icon) => ({ id, name, desc, tier, group, icon: icon || TIER_ICON[tier], test });
-  const T1 = trophy('최종 수익');
-  const T2 = trophy('클리어 방식');
-  const T3 = trophy('눈물의 트로피');
+  const T1 = trophy('profit');
+  const T2 = trophy('clearStyle');
+  const T3 = trophy('tears');
   const multiple = (n, name, tier) => T1(`x${n}`, name, `Clear하고 시작 자금의 ${n}배 이상`, tier, (c) => clear(c) && c.r.finalHp >= c.r.startHp * n);
 
   const TROPHIES = [
@@ -61,14 +62,14 @@
   ];
 
   const medal = (group) => (id, icon, name, desc, test) => ({ id, icon, name, desc, group, test });
-  const M1 = medal('첫 경험');
-  const M2 = medal('전투');
-  const M3 = medal('매매');
-  const M4 = medal('크리티컬');
-  const M5 = medal('아이템');
-  const M6 = medal('시장');
-  const M7 = medal('주식 밈');
-  const M8 = medal('성장');
+  const M1 = medal('first');
+  const M2 = medal('battle');
+  const M3 = medal('trade');
+  const M4 = medal('crit');
+  const M5 = medal('item');
+  const M6 = medal('market');
+  const M7 = medal('meme');
+  const M8 = medal('growth');
   const usedInWin = (id) => anyWin((s) => s.itemsUsed.includes(id));
   const boardDone = (board) => (c) => {
     const ids = c.data.monsters.filter((m) => m.board === board).map((m) => m.id);

@@ -2,8 +2,13 @@
 (function () {
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const RESULT = { win: ['승', 'up'], timeout: ['초과', 'dn'], dead: ['사망', 'dn'] };
-  const STATUS = { clear: ['클리어', 'gold'], dead: ['사망', 'dn'], survived: ['생존', 'dim'] };
+  const t = (key, p) => I18n.t(key, p);
+  const RESULT_CLS = { win: 'up', timeout: 'dn', dead: 'dn' };
+  const STATUS_CLS = { clear: 'gold', dead: 'dn', survived: 'dim' };
+  const resultOf = (r) => (RESULT_CLS[r] ? [t(`result.short.${r}`), RESULT_CLS[r]] : ['-', 'dim']);
+  const statusOf = (st) => (STATUS_CLS[st] ? [t(`status.${st}`), STATUS_CLS[st]] : ['-', 'dim']);
+  // 리포트에는 그때의 한국어 이름이 남아 있으므로 기업 id로 지금 언어의 이름을 찾는다.
+  const stageName = (s) => I18n.monsterName(s.monsterId, s.name);
   const dot = (d) => (d ? d.replace(/-/g, '.') : '');
   const month = (d) => dot(d).slice(0, 7);
 
@@ -14,7 +19,7 @@
 
   // ---------- 확인 창 ----------
 
-  function confirmBox(text, yes = '확인', no = '취소') {
+  function confirmBox(text, yes = t('common.ok'), no = t('common.cancel')) {
     $('confirmText').textContent = text;
     $('confirmYes').textContent = yes;
     $('confirmNo').textContent = no;
@@ -37,10 +42,10 @@
 
   function renderStart() {
     const saved = UI.hasSavedRun();
-    $('btnStart').textContent = saved ? '이어 하기' : '시작하기';
+    $('btnStart').textContent = saved ? t('start.continue') : t('start.start');
     $('btnNewRun').hidden = !saved;
     const mods = Meta.mods(UI.collection.meta);
-    $('startSub').textContent = `초기 자금 ${Format.money(Rules.CONFIG.startHp + mods.startBonus)}`;
+    $('startSub').textContent = t('start.funds', { money: Format.money(Rules.CONFIG.startHp + mods.startBonus) });
   }
 
   // ---------- 성장 ----------
@@ -50,16 +55,15 @@
   function renderGrowth() {
     const meta = UI.collection.meta;
     $('growthPoints').textContent = meta.points;
-    $('growthNote').textContent = Meta.isFirstRun(meta)
-      ? '첫 판입니다. 마지막 보스는 봉인되어 있어 이길 수 없습니다. 죽으면 내공이 쌓입니다.'
-      : '죽어도 내공은 남습니다. 강화는 다음 판부터 계속 적용됩니다.';
+    $('growthNote').textContent = Meta.isFirstRun(meta) ? t('growth.first') : t('growth.note');
     $('upgradeList').innerHTML = Meta.UPGRADES.map((u) => {
       const lv = Meta.level(meta, u.id);
       const price = Meta.cost(meta, u.id);
       const btn = price === null
-        ? `<button data-buy="${u.id}" class="maxed" disabled>최대</button>`
-        : `<button data-buy="${u.id}" ${meta.points < price ? 'disabled' : ''}>내공 ${price}</button>`;
-      return `<div class="upgrade"><div><b>${u.name}</b> <span class="pips">${pips(lv, u.max)}</span><small>${u.desc}</small></div>${btn}</div>`;
+        ? `<button data-buy="${u.id}" class="maxed" disabled>${t('growth.max')}</button>`
+        : `<button data-buy="${u.id}" ${meta.points < price ? 'disabled' : ''}>${t('growth.cost', { n: price })}</button>`;
+      const desc = I18n.upgradeDesc(u, Format.money(u.step));
+      return `<div class="upgrade"><div><b>${esc(I18n.upgradeName(u))}</b> <span class="pips">${pips(lv, u.max)}</span><small>${esc(desc)}</small></div>${btn}</div>`;
     }).join('');
   }
 
@@ -90,42 +94,42 @@
     report = r;
     const kills = r.stages.filter((s) => s.result === 'win').length;
     const timeouts = r.stages.filter((s) => s.result === 'timeout').length;
-    $('reportTitle').textContent = r.title;
+    $('reportTitle').textContent = Report.TITLES[r.status] ? t(`report.title.${r.status}`) : r.title;
     $('reportTitle').className = `reportTitle ${r.status === 'clear' ? '' : 'over'}`;
-    $('reportSub').textContent = `${kills}마리 처치 · 시간 초과 ${timeouts} · 내공 +${r.points}`;
+    $('reportSub').textContent = t('report.sub', { kills, timeouts, points: r.points });
     $('reportFinal').textContent = Format.money(r.finalHp);
     $('reportPnl').textContent = `${Format.signed(r.pnl)} (${Format.pct(r.pnlPct)})`;
     $('reportPnl').className = r.pnl > 0 ? 'up' : r.pnl < 0 ? 'dn' : '';
     $('reportWin').textContent = `${Math.round(r.winRate * 100)}%`;
-    $('reportCrit').textContent = `${r.crits}회`;
+    $('reportCrit').textContent = t('report.critCount', { n: r.crits });
     $('reportHold').textContent = `${Format.pct(r.vsHoldPct).replace('%', '%p')}`;
     $('reportHold').className = r.vsHoldPct > 0 ? 'up' : r.vsHoldPct < 0 ? 'dn' : '';
     const badges = [];
-    if (r.trophies.length) badges.push(`<span class="chip">새 트로피 ${r.trophies.length}</span>`);
-    if (r.medals.length) badges.push(`<span class="chip">메달 ${r.medals.length}</span>`);
+    if (r.trophies.length) badges.push(`<span class="chip">${t('report.newTrophies', { n: r.trophies.length })}</span>`);
+    if (r.medals.length) badges.push(`<span class="chip">${t('report.medals', { n: r.medals.length })}</span>`);
     $('reportBadges').innerHTML = badges.join('');
     // 이번 판에 받은 트로피와 메달의 이름
     const all = [...Achievements.TROPHIES, ...Achievements.MEDALS];
     const names = [...r.trophies, ...r.medals].map((id) => all.find((x) => x.id === id)).filter(Boolean);
-    $('reportAwards').innerHTML = names.map((x) => `<span>${x.icon} ${esc(x.name)}</span>`).join('');
+    $('reportAwards').innerHTML = names.map((x) => `<span>${x.icon} ${esc(I18n.achName(x))}</span>`).join('');
     $('reportAwards').hidden = names.length === 0;
     $('reportList').innerHTML = r.stages.map((s, i) => {
-      const [label, cls] = RESULT[s.result] || ['-', 'dim'];
+      const [label, cls] = resultOf(s.result);
       return `<button class="line" data-stage="${i}"><span class="st ${cls}">${label}</span>`
-        + `<div class="name">${esc(s.name)}${s.sealed ? ' 🔒' : ''}<small>${month(s.from)} ~ ${month(s.to)}</small></div>`
-        + `<span class="tally2">공격 <span class="up">${Format.money(s.dealt)}</span><br>피해 <span class="dn">${Format.money(s.taken)}</span></span></button>`;
+        + `<div class="name">${esc(stageName(s))}${s.sealed ? ' 🔒' : ''}<small>${month(s.from)} ~ ${month(s.to)}</small></div>`
+        + `<span class="tally2">${t('battle.dealt')} <span class="up">${Format.money(s.dealt)}</span><br>${t('battle.taken')} <span class="dn">${Format.money(s.taken)}</span></span></button>`;
     }).join('');
     $('btnSaveReport').hidden = fromJourney;
     $('btnSaveReport').disabled = reportSaved;
-    $('btnSaveReport').textContent = reportSaved ? '저장됨' : '리포트 저장';
+    $('btnSaveReport').textContent = reportSaved ? t('report.saved') : t('report.save');
     $('btnAgain').hidden = fromJourney;
-    $('btnExit').textContent = fromJourney ? '← 여정으로' : '종료';
+    $('btnExit').textContent = fromJourney ? t('report.toJourney') : t('report.exit');
     App.show('report');
   }
 
   async function leaveReport(target) {
     if (!fromJourney && !reportSaved) {
-      const ok = await confirmBox('리포트를 저장하지 않았습니다. 그래도 나갈까요?', '나가기', '취소');
+      const ok = await confirmBox(t('report.leaveAsk'), t('report.leave'), t('common.cancel'));
       if (!ok) return;
     }
     if (target === 'growth') {
@@ -142,16 +146,16 @@
   // ---------- 단계 상세 ----------
 
   function momentText(m) {
-    if (m.kind === 'attack') return m.crit > 1 ? `크리티컬 ×${m.crit}` : '공격';
-    if (m.dot) return `물린 채 도트 (${m.to - m.from + 1}칸)`;
-    if (m.timeout) return '시간 초과 피해';
-    return m.crit > 1 ? `손실 크리티컬 ×${m.crit}` : '손실 매도';
+    if (m.kind === 'attack') return m.crit > 1 ? t('battle.crit', { n: m.crit }) : t('stage.attack');
+    if (m.dot) return t('stage.dot', { n: m.to - m.from + 1 });
+    if (m.timeout) return t('stage.timeout');
+    return m.crit > 1 ? t('stage.lossCrit', { n: m.crit }) : t('stage.loss');
   }
 
   function showStage(i) {
     const s = report.stages[i];
-    const [label, cls] = RESULT[s.result] || ['-', 'dim'];
-    $('stageTitle').textContent = `${i + 1}단계 · ${s.name}`;
+    const [label, cls] = resultOf(s.result);
+    $('stageTitle').textContent = t('stage.title', { n: i + 1, name: stageName(s) });
     $('stageResult').textContent = label;
     $('stageResult').className = cls;
     $('stageDates').textContent = `${dot(s.from)} ~ ${dot(s.to)} · ${'★'.repeat(s.tier)}${'☆'.repeat(3 - s.tier)}`;
@@ -161,8 +165,8 @@
     $('stageHold').className = s.holdPct > 0 ? 'up' : 'dn';
     const top = [...s.markers].sort((a, b) => b.amount - a.amount).slice(0, 5).sort((a, b) => a.cell - b.cell);
     $('stageMoments').innerHTML = top.length ? top.map((m) => `<div class="line"><span class="st ${m.kind === 'attack' ? 'up' : 'dn'}">${m.kind === 'attack' ? '⚔' : '✕'}</span>`
-      + `<div>${momentText(m)}<small>${m.cell - Rules.CONFIG.preroll + 1}칸째</small></div><b class="${m.kind === 'attack' ? 'up' : 'dn'}">${Format.signed(m.kind === 'attack' ? m.amount : -m.amount)}</b></div>`).join('')
-      : '<p class="dim">큰 공격이나 피해가 없었습니다.</p>';
+      + `<div>${momentText(m)}<small>${t('stage.cell', { n: m.cell - Rules.CONFIG.preroll + 1 })}</small></div><b class="${m.kind === 'attack' ? 'up' : 'dn'}">${Format.signed(m.kind === 'attack' ? m.amount : -m.amount)}</b></div>`).join('')
+      : `<p class="dim">${t('stage.none')}</p>`;
     App.show('stage');
     const canvas = $('stageChart');
     const { w, h, dpr } = Chart.fit(canvas);
@@ -174,25 +178,26 @@
   async function showJourney() {
     App.show('journey');
     const reports = await Saves.listReports();
-    $('journeyCount').textContent = `${reports.length}판 · 클리어 ${reports.filter((r) => r.status === 'clear').length}`;
+    $('journeyCount').textContent = t('journey.count', { runs: reports.length, clears: reports.filter((r) => r.status === 'clear').length });
     $('journeyEmpty').hidden = reports.length > 0;
-    $('btnJourneyStart').textContent = UI.hasSavedRun() ? '이어 하기' : '시작하기';
+    $('btnJourneyStart').textContent = UI.hasSavedRun() ? t('start.continue') : t('start.start');
     $('journeyList').hidden = reports.length === 0;
     $('journeyBest').hidden = reports.length === 0;
     if (reports.length) {
       const best = reports.reduce((a, b) => (b.finalHp > a.finalHp ? b : a));
       const bestPct = Math.max(...reports.map((r) => r.pnlPct));
       const kills = Math.max(...reports.map((r) => r.stages.filter((s) => s.result === 'win').length));
-      $('journeyBest').innerHTML = `<div><small>최고 계좌</small><b>${Format.money(best.finalHp)}</b></div>`
-        + `<div><small>최고 수익</small><b class="${bestPct > 0 ? 'up' : 'dn'}">${Format.pct(bestPct)}</b></div><div><small>최다 격파</small><b>${kills}마리</b></div>`;
+      $('journeyBest').innerHTML = `<div><small>${t('journey.bestHp')}</small><b>${Format.money(best.finalHp)}</b></div>`
+        + `<div><small>${t('journey.bestPct')}</small><b class="${bestPct > 0 ? 'up' : 'dn'}">${Format.pct(bestPct)}</b></div>`
+        + `<div><small>${t('journey.mostKills')}</small><b>${t('journey.killCount', { n: kills })}</b></div>`;
     }
     $('journeyList').innerHTML = reports.map((r) => {
-      const [label, cls] = STATUS[r.status] || ['-', 'dim'];
+      const [label, cls] = statusOf(r.status);
       const kills = r.stages.filter((s) => s.result === 'win').length;
       const last = r.stages[r.stages.length - 1];
-      const title = r.status === 'dead' && last ? `${esc(last.name)}에서` : Format.money(r.finalHp);
+      const title = r.status === 'dead' && last ? esc(t('journey.diedAt', { name: stageName(last) })) : Format.money(r.finalHp);
       return `<button class="line" data-report="${esc(r.id)}"><span class="st ${cls}">${label}</span>`
-        + `<div class="name">${title}<small>${r.createdAt.slice(0, 10).replace(/-/g, '.')} · ${kills}마리 처치</small></div>`
+        + `<div class="name">${title}<small>${r.createdAt.slice(0, 10).replace(/-/g, '.')} · ${t('journey.kills', { n: kills })}</small></div>`
         + `<b class="${r.pnl > 0 ? 'up' : 'dn'}">${Format.pct(r.pnlPct)}</b></button>`;
     }).join('');
     UI.journeyReports = reports;
@@ -208,7 +213,7 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    $('backupMsg').textContent = '백업 파일을 내려받았습니다.';
+    $('backupMsg').textContent = t('journey.exported');
   }
 
   // 백업 불러오기. 잘못된 파일이면 기존 기록을 건드리지 않는다.
@@ -216,10 +221,11 @@
     try {
       await Saves.importAll(text);
       UI.collection = await Saves.getCollection();
-      $('backupMsg').textContent = '백업을 불러왔습니다.';
+      $('backupMsg').textContent = t('journey.imported');
       if (App.current === 'journey') await showJourney();
     } catch (e) {
-      $('backupMsg').textContent = `불러오기 실패: ${e.message.includes('JSON') ? '파일 내용이 올바르지 않습니다' : e.message}`;
+      const why = e.code ? t(`backup.${e.code}`) : e instanceof SyntaxError || e.message.includes('JSON') ? t('backup.bad') : e.message;
+      $('backupMsg').textContent = t('journey.importFailed', { why });
     }
   };
 
@@ -235,18 +241,19 @@
     if (trophyTab === 'dex') {
       const dex = UI.collection.dex;
       const ms = [...UI.data.monsters].sort((x, y) => x.marketCapKrw - y.marketCapKrw);
-      html = `<div class="groupLabel">처치한 기업 ${ms.filter((m) => dex[m.id] && dex[m.id].kills).length} / ${ms.length}</div><div class="grid">`
+      html = `<div class="groupLabel">${t('trophy.dexCount', { kills: ms.filter((m) => dex[m.id] && dex[m.id].kills).length, total: ms.length })}</div><div class="grid">`
         + ms.map((m) => {
           const d = dex[m.id];
           const met = d && d.met;
-          return `<button class="tile ${d && d.kills ? '' : 'off'}" data-dex="${esc(m.id)}"><i>${met ? esc(m.name[0]) : '?'}</i>${met ? esc(m.name) : '???'}</button>`;
+          const name = I18n.monster(m).name;
+          return `<button class="tile ${d && d.kills ? '' : 'off'}" data-dex="${esc(m.id)}"><i>${met ? esc(name[0]) : '?'}</i>${met ? esc(name) : '???'}</button>`;
         }).join('') + '</div>';
     } else {
       const list = trophyTab === 'trophy' ? Achievements.TROPHIES : Achievements.MEDALS;
       const owned = trophyTab === 'trophy' ? a.trophies : a.medals;
       const groups = [...new Set(list.map((x) => x.group))];
-      html = groups.map((g) => `<div class="groupLabel">${g}</div><div class="grid">${list.filter((x) => x.group === g)
-        .map((x) => `<button class="tile ${owned.includes(x.id) ? '' : 'off'}" data-ach="${x.id}"><i>${x.icon}</i>${esc(x.name)}</button>`).join('')}</div>`).join('');
+      html = groups.map((g) => `<div class="groupLabel">${t(`group.${g}`)}</div><div class="grid">${list.filter((x) => x.group === g)
+        .map((x) => `<button class="tile ${owned.includes(x.id) ? '' : 'off'}" data-ach="${x.id}"><i>${x.icon}</i>${esc(I18n.achName(x))}</button>`).join('')}</div>`).join('');
     }
     $('trophyPane').innerHTML = html;
   }
@@ -269,7 +276,7 @@
   function bind() {
     $('btnStart').addEventListener('click', startOrContinue);
     $('btnNewRun').addEventListener('click', async () => {
-      if (!(await confirmBox('진행 중인 판을 버리고 새로 시작할까요? 그 판의 내공은 받지 못합니다.', '새로 시작', '취소'))) return;
+      if (!(await confirmBox(t('start.newRunAsk'), t('start.newRun'), t('common.cancel')))) return;
       Saves.clearRun();
       UI.run = null;
       renderGrowth();
@@ -294,12 +301,12 @@
       try {
         await Saves.putReport(report);
       } catch {
-        $('btnSaveReport').textContent = '저장 실패 · 다시 시도';
+        $('btnSaveReport').textContent = t('report.saveFailed');
         return;
       }
       reportSaved = true;
       $('btnSaveReport').disabled = true;
-      $('btnSaveReport').textContent = '저장됨';
+      $('btnSaveReport').textContent = t('report.saved');
     });
     $('btnAgain').addEventListener('click', () => leaveReport('growth'));
     $('btnExit').addEventListener('click', () => leaveReport('start'));
@@ -325,7 +332,7 @@
       const file = e.target.files[0];
       e.target.value = '';
       if (!file) return;
-      if (!(await confirmBox('지금 기록을 지우고 백업으로 바꿀까요?', '불러오기', '취소'))) return;
+      if (!(await confirmBox(t('journey.importAsk'), t('journey.importYes'), t('common.cancel')))) return;
       await UI.importText(await file.text());
     });
     $('trophyTabs').addEventListener('click', (e) => {
@@ -335,20 +342,21 @@
       renderTrophy();
     });
     $('trophyPane').addEventListener('click', (e) => {
-      const t = e.target.closest('[data-ach]');
-      if (t) {
-        const x = [...Achievements.TROPHIES, ...Achievements.MEDALS].find((y) => y.id === t.dataset.ach);
+      const tile = e.target.closest('[data-ach]');
+      if (tile) {
+        const x = [...Achievements.TROPHIES, ...Achievements.MEDALS].find((y) => y.id === tile.dataset.ach);
         const owned = [...UI.collection.achievements.trophies, ...UI.collection.achievements.medals].includes(x.id);
-        showDetail(`<b>${x.icon} ${esc(x.name)}</b> <span class="${owned ? 'gold' : 'dim'}">${owned ? '받음' : '아직'}</span><br><span class="dim">${esc(x.desc)}</span>`);
+        showDetail(`<b>${x.icon} ${esc(I18n.achName(x))}</b> <span class="${owned ? 'gold' : 'dim'}">${owned ? t('trophy.owned') : t('trophy.notYet')}</span><br><span class="dim">${esc(I18n.achDesc(x))}</span>`);
         return;
       }
       const d = e.target.closest('[data-dex]');
       if (d) {
         const m = UI.data.monsters.find((y) => y.id === d.dataset.dex);
         const row = UI.collection.dex[m.id];
+        const local = I18n.monster(m);
         showDetail(row && row.met
-          ? `<b>${esc(m.name)}</b> <span class="dim">만난 횟수 ${row.met} · 처치 ${row.kills} · 최고 공격 ${Format.money(row.bestDealt)}</span><br>${esc(m.desc || '')}`
-          : '<b>???</b> <span class="dim">아직 만나지 못한 기업입니다.</span>');
+          ? `<b>${esc(local.name)}</b> <span class="dim">${t('trophy.dexRow', { met: row.met, kills: row.kills, best: Format.money(row.bestDealt) })}</span><br>${esc(local.desc)}`
+          : `<b>???</b> <span class="dim">${t('trophy.unmet')}</span>`);
       }
     });
     $('btnTrophyBack').addEventListener('click', () => {
@@ -359,6 +367,8 @@
 
   UI.bootScreens = () => {
     bind();
+    // 언어 고르기는 시작 화면과 일시정지 화면에 있다. 시작 화면은 바로 다시 그린다.
+    I18n.onChange(() => { if (App.current === 'start') renderStart(); });
     UI.onRunEnd = onRunEnd;
     renderStart();
     App.show('start');

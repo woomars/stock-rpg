@@ -137,8 +137,10 @@
   // 기존 기록을 지우기 전에 파일 전체를 검사한다.
   function unpack(text) {
     const data = JSON.parse(text);
-    const bad = () => { throw new Error('백업 파일 내용이 올바르지 않습니다'); };
-    if (!data || data.app !== APP || data.version !== VERSION) throw new Error('목숨걸고 투자의 백업 파일이 아닙니다');
+    // code는 화면이 언어에 맞는 문구(backup.*)를 고르는 데 쓴다.
+    const fail = (code, message) => { const e = new Error(message); e.code = code; throw e; };
+    const bad = () => fail('bad', '백업 파일 내용이 올바르지 않습니다');
+    if (!data || data.app !== APP || data.version !== VERSION) fail('notOurs', '목숨걸고 투자의 백업 파일이 아닙니다');
     if (!Array.isArray(data.reports) || !isObj(data.collection)) bad();
     for (const r of data.reports) {
       if (!isObj(r) || typeof r.id !== 'string' || typeof r.createdAt !== 'string' || !Array.isArray(r.stages)) bad();

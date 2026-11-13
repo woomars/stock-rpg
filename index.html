@@ -9,8 +9,13 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="목숨걸고 투자">
-<link rel="stylesheet" href="style.css?v=e99edce09d">
+<!-- 홈 화면 앱 이름은 모든 게임이 영어로 통일한다. 화면 안 <title>만 언어를 따른다. -->
+<meta name="apple-mobile-web-app-title" content="Invest or Die">
+<meta name="application-name" content="Invest or Die">
+<link rel="stylesheet" href="style.css?v=a85264f555">
+<script src="js/flags.js?v=aa4e935ee3"></script>
+<script src="js/i18n.js?v=0bfb425057"></script>
+<script>document.documentElement.lang = I18n.lang; document.title = I18n.t("app.name"); document.documentElement.classList.add("i18nPending");</script>
   <script src="https://woomars.github.io/count.js" defer></script>
 </head>
 <body>
@@ -20,27 +25,28 @@
   <section id="screen-start" class="screen scene">
     <div class="sky" data-board="KOSDAQ"></div>
     <button id="btnSound" class="iconBtn soundCorner" aria-label="소리 끄기">🔊</button>
+    <div class="langFlags langCorner" role="group" data-i18n-aria="lang.label" aria-label="언어"><button data-lang="ko" data-flag="ko" aria-label="한국어" title="한국어"></button><button data-lang="en" data-flag="en" aria-label="English" title="English"></button><button data-lang="ja" data-flag="ja" aria-label="日本語" title="日本語"></button></div>
     <div class="startTitle">
-      <div class="gold eyebrow" id="startSub">초기 자금 천만 원</div>
-      <h1>목숨걸고<br>투자</h1>
+      <div class="gold eyebrow" id="startSub" data-i18n="start.fundsInit">초기 자금 천만 원</div>
+      <h1 data-i18n-html="start.title">목숨걸고<br>투자</h1>
     </div>
     <div class="act startAct">
-      <button id="btnStart" class="pri big">시작하기</button>
-      <button id="btnNewRun" class="link" hidden>새로 시작</button>
-      <button id="btnJourney" class="solid">그동안의 여정</button>
-      <button id="btnTrophy" class="solid">트로피와 메달</button>
-      <p class="disclaimer" id="disclaimer">재미용 게임입니다. 투자 조언이 아닙니다. 과거 실제 주가를 씁니다.</p>
+      <button id="btnStart" class="pri big" data-i18n="start.start">시작하기</button>
+      <button id="btnNewRun" class="link" hidden data-i18n="start.newRun">새로 시작</button>
+      <button id="btnJourney" class="solid" data-i18n="start.journey">그동안의 여정</button>
+      <button id="btnTrophy" class="solid" data-i18n="start.trophy">트로피와 메달</button>
+      <p class="disclaimer" id="disclaimer" data-i18n="start.disclaimer">재미용 게임입니다. 투자 조언이 아닙니다. 과거 실제 주가를 씁니다.</p>
     </div>
   </section>
 
   <!-- 성장 -->
   <section id="screen-growth" class="screen full" hidden>
-    <div class="row head"><b class="title">성장</b><span>내공 <b id="growthPoints" class="gold">0</b></span></div>
-    <p class="dim small" id="growthNote">죽어도 내공은 남습니다. 강화는 다음 판부터 계속 적용됩니다.</p>
+    <div class="row head"><b class="title" data-i18n="growth.title">성장</b><span><span data-i18n="growth.points">내공</span> <b id="growthPoints" class="gold">0</b></span></div>
+    <p class="dim small" id="growthNote" data-i18n="growth.note">죽어도 내공은 남습니다. 강화는 다음 판부터 계속 적용됩니다.</p>
     <div class="list" id="upgradeList"></div>
     <div class="act">
-      <button id="btnDepart" class="pri">출발</button>
-      <button id="btnGrowthBack" class="solid">← 처음으로</button>
+      <button id="btnDepart" class="pri" data-i18n="growth.depart">출발</button>
+      <button id="btnGrowthBack" class="solid" data-i18n="common.home">← 처음으로</button>
     </div>
   </section>
 
@@ -54,19 +60,19 @@
           <div class="row"><b id="monsterName" class="monsterName">-</b><span id="monsterHpText">-</span></div>
           <div class="bar hpm"><i id="monsterHpBar"></i></div>
         </div>
-        <button id="btnPause" class="iconBtn" aria-label="일시정지">
+        <button id="btnPause" class="iconBtn" aria-label="일시정지" data-i18n-aria="battle.pause">
           <svg width="16" height="18" viewBox="0 0 16 18" aria-hidden="true"><rect x="1" width="5" height="18" rx="1" fill="#fff"/><rect x="10" width="5" height="18" rx="1" fill="#fff"/></svg>
         </button>
       </div>
       <div class="arena">
         <div class="plate" id="monsterLogo"></div>
         <div class="monsterLabel" id="monsterLabel"><b></b><small></small></div>
-        <div class="sealTag" id="sealTag" hidden>🔒 봉인</div>
+        <div class="sealTag" id="sealTag" hidden data-i18n="battle.sealed">🔒 봉인</div>
         <div class="hit" id="hitText" hidden></div>
         <div class="tally" id="tally">공격 <b class="up">0</b><br>피해 <b class="dn">0</b></div>
       </div>
       <div class="chartwin">
-        <div class="row"><b id="priceNow">-</b><b id="pnlNow">보유 없음</b></div>
+        <div class="row"><b id="priceNow">-</b><b id="pnlNow" data-i18n="battle.noHolding">보유 없음</b></div>
         <div class="holdInfo" id="holdInfo"></div>
         <div class="plot"><canvas id="chart"></canvas><div class="toast" id="tradeToast" hidden></div></div>
       </div>
@@ -78,14 +84,14 @@
         <div class="dotInfo dn" id="dotInfo"></div>
       </div>
       <div class="ctl" id="ctl">
-        <button id="pctDown" class="step" aria-label="비율 낮추기">−</button>
+        <button id="pctDown" class="step" aria-label="비율 낮추기" data-i18n-aria="battle.pctDown">−</button>
         <div class="val"><b id="pctVal">10%</b><small id="pctCap">최대 10%</small></div>
-        <button id="pctUp" class="step" aria-label="비율 높이기">+</button>
+        <button id="pctUp" class="step" aria-label="비율 높이기" data-i18n-aria="battle.pctUp">+</button>
         <div class="items" id="items"></div>
       </div>
       <div class="btns">
-        <button id="btnBuy" class="buy">사기<small id="buyHint">현금의 10%</small></button>
-        <button id="btnSell" class="sell">팔기<small id="sellHint">보유의 10%</small></button>
+        <button id="btnBuy" class="buy"><span data-i18n="battle.buy">사기</span><small id="buyHint" data-i18n="battle.buyHintInit">현금의 10%</small></button>
+        <button id="btnSell" class="sell"><span data-i18n="battle.sell">팔기</span><small id="sellHint" data-i18n="battle.sellHintInit">보유의 10%</small></button>
       </div>
     </div>
 
@@ -97,28 +103,29 @@
         <div class="briefDate gold" id="briefDate"></div>
         <div class="briefMood" id="briefMood"></div>
         <div class="briefEra" id="briefEra"></div>
-        <p class="dim small">앞 20칸의 그래프는 시작 뒤 3초 동안 볼 수 있습니다.</p>
-        <button id="btnBriefStart" class="pri briefGo">전투 시작</button>
+        <p class="dim small" data-i18n="brief.note">앞 20칸의 그래프는 시작 뒤 3초 동안 볼 수 있습니다.</p>
+        <button id="btnBriefStart" class="pri briefGo" data-i18n="brief.go">전투 시작</button>
       </div>
     </div>
     <div class="cover" id="countdown" hidden><div class="count" id="countNum">3</div><p class="dim" id="countNote"></p></div>
     <div class="cover" id="pauseCover" hidden>
       <div class="coverBox">
-        <div class="coverTitle">일시정지</div>
-        <p class="dim">그래프는 가려 둡니다.<br>다시 시작하면 3초를 센 뒤 이어집니다.</p>
+        <div class="coverTitle" data-i18n="pause.title">일시정지</div>
+        <p class="dim" data-i18n-html="pause.text">그래프는 가려 둡니다.<br>다시 시작하면 3초를 센 뒤 이어집니다.</p>
         <div class="act">
-          <button id="btnResume" class="pri">이어 하기</button>
-          <button id="btnForfeit" class="solid">전투 포기</button>
+          <button id="btnResume" class="pri" data-i18n="pause.resume">이어 하기</button>
+          <button id="btnForfeit" class="solid" data-i18n="pause.forfeit">전투 포기</button>
           <button id="btnSoundPause" class="solid soundBtn" aria-label="소리 끄기">🔊 소리 켜짐</button>
         </div>
+        <div class="langSeg" role="group" data-i18n-aria="lang.label" aria-label="언어"><button data-lang="ko" lang="ko">한국어</button><button data-lang="en" lang="en">English</button><button data-lang="ja" lang="ja">日本語</button></div>
       </div>
     </div>
     <div class="cover" id="itemChoice" hidden>
       <div class="coverBox">
-        <div class="coverTitle">새 아이템 <span id="newItemName" class="gold"></span></div>
-        <p class="dim">아이템 칸이 찼습니다. 바꿀 아이템을 고르거나 버리세요.</p>
+        <div class="coverTitle"><span data-i18n="item.new">새 아이템</span> <span id="newItemName" class="gold"></span></div>
+        <p class="dim" data-i18n="item.full">아이템 칸이 찼습니다. 바꿀 아이템을 고르거나 버리세요.</p>
         <div class="act" id="replaceList"></div>
-        <button id="btnDiscard" class="solid">새 아이템 버리기</button>
+        <button id="btnDiscard" class="solid" data-i18n="item.discard">새 아이템 버리기</button>
       </div>
     </div>
     <div class="cover result" id="battleResult" hidden><div class="coverTitle" id="resultTitle"></div><p id="resultText"></p></div>
@@ -136,16 +143,16 @@
       <div id="reportPnl">-</div>
     </div>
     <div class="stat3">
-      <div><small>매매 승률</small><b id="reportWin">-</b></div>
-      <div><small>크리티컬</small><b id="reportCrit">-</b></div>
-      <div><small>그냥 보유 대비</small><b id="reportHold">-</b></div>
+      <div><small data-i18n="report.winRate">매매 승률</small><b id="reportWin">-</b></div>
+      <div><small data-i18n="report.crits">크리티컬</small><b id="reportCrit">-</b></div>
+      <div><small data-i18n="report.vsHold">그냥 보유 대비</small><b id="reportHold">-</b></div>
     </div>
     <div class="awards" id="reportAwards" hidden></div>
-    <div class="row"><span class="dim small">단계별 공격/피해</span><span id="reportBadges"></span></div>
+    <div class="row"><span class="dim small" data-i18n="report.byStage">단계별 공격/피해</span><span id="reportBadges"></span></div>
     <div class="list" id="reportList"></div>
     <div class="act">
-      <button id="btnSaveReport" class="pri">리포트 저장</button>
-      <div class="two"><button id="btnAgain" class="solid">다시 하기</button><button id="btnExit" class="solid">종료</button></div>
+      <button id="btnSaveReport" class="pri" data-i18n="report.save">리포트 저장</button>
+      <div class="two"><button id="btnAgain" class="solid" data-i18n="report.again">다시 하기</button><button id="btnExit" class="solid" data-i18n="report.exit">종료</button></div>
     </div>
   </section>
 
@@ -155,66 +162,69 @@
     <div class="dim small" id="stageDates"></div>
     <div class="stageChart"><canvas id="stageChart"></canvas></div>
     <div class="stat3">
-      <div><small>공격량</small><b class="up" id="stageDealt">-</b></div>
-      <div><small>피해량</small><b class="dn" id="stageTaken">-</b></div>
-      <div><small>그냥 보유</small><b id="stageHold">-</b></div>
+      <div><small data-i18n="stage.dealt">공격량</small><b class="up" id="stageDealt">-</b></div>
+      <div><small data-i18n="stage.taken">피해량</small><b class="dn" id="stageTaken">-</b></div>
+      <div><small data-i18n="stage.hold">그냥 보유</small><b id="stageHold">-</b></div>
     </div>
-    <div class="dim small">주요 순간</div>
+    <div class="dim small" data-i18n="stage.moments">주요 순간</div>
     <div class="list" id="stageMoments"></div>
-    <div class="act"><button id="btnStageBack" class="solid">← 리포트로</button></div>
+    <div class="act"><button id="btnStageBack" class="solid" data-i18n="stage.back">← 리포트로</button></div>
   </section>
 
   <!-- 여정 -->
   <section id="screen-journey" class="screen full" hidden>
-    <div class="row head"><b class="title">그동안의 여정</b><span class="dim" id="journeyCount"></span></div>
+    <div class="row head"><b class="title" data-i18n="journey.title">그동안의 여정</b><span class="dim" id="journeyCount"></span></div>
     <div class="stat3" id="journeyBest"></div>
     <div class="list" id="journeyList"></div>
     <div class="empty" id="journeyEmpty" hidden>
-      <p>아직 여정이 없습니다.</p>
-      <button id="btnJourneyStart" class="pri">시작하기</button>
+      <p data-i18n="journey.empty">아직 여정이 없습니다.</p>
+      <button id="btnJourneyStart" class="pri" data-i18n="start.start">시작하기</button>
     </div>
     <div class="act">
-      <div class="two"><button id="btnExport" class="solid">백업 내보내기</button><label class="solid fileBtn">백업 불러오기<input type="file" id="importFile" accept="application/json,.json"></label></div>
+      <div class="two"><button id="btnExport" class="solid" data-i18n="journey.export">백업 내보내기</button><label class="solid fileBtn"><span data-i18n="journey.import">백업 불러오기</span><input type="file" id="importFile" accept="application/json,.json"></label></div>
       <p class="dim small" id="backupMsg"></p>
-      <button id="btnJourneyBack" class="solid">← 처음으로</button>
+      <button id="btnJourneyBack" class="solid" data-i18n="common.home">← 처음으로</button>
     </div>
   </section>
 
   <!-- 트로피 -->
   <section id="screen-trophy" class="screen full" hidden>
-    <div class="row head"><b class="title">트로피와 메달</b><span class="dim" id="trophyCount"></span></div>
+    <div class="row head"><b class="title" data-i18n="trophy.title">트로피와 메달</b><span class="dim" id="trophyCount"></span></div>
     <div class="tabs" id="trophyTabs">
-      <button data-tab="trophy" class="on">트로피</button><button data-tab="medal">메달</button><button data-tab="dex">몬스터 도감</button>
+      <button data-tab="trophy" class="on" data-i18n="trophy.tabTrophy">트로피</button><button data-tab="medal" data-i18n="trophy.tabMedal">메달</button><button data-tab="dex" data-i18n="trophy.tabDex">몬스터 도감</button>
     </div>
     <div class="list" id="trophyPane"></div>
     <div class="detail" id="trophyDetail" hidden></div>
-    <div class="act"><button id="btnTrophyBack" class="solid">← 처음으로</button></div>
+    <div class="act"><button id="btnTrophyBack" class="solid" data-i18n="common.home">← 처음으로</button></div>
   </section>
 
   <div class="cover confirm" id="confirmBox" hidden>
     <div class="coverBox">
       <p id="confirmText"></p>
-      <div class="act two"><button id="confirmNo" class="solid">취소</button><button id="confirmYes" class="pri">확인</button></div>
+      <div class="act two"><button id="confirmNo" class="solid" data-i18n="common.cancel">취소</button><button id="confirmYes" class="pri" data-i18n="common.ok">확인</button></div>
     </div>
   </div>
 
-  <div class="rotate" id="rotate"><p>세로 화면으로 돌려 주세요</p></div>
+  <div class="rotate" id="rotate"><p data-i18n="rotate">세로 화면으로 돌려 주세요</p></div>
 </div>
+<!-- 고정 문구를 언어에 맞춘 뒤 보인다 -->
+<script>I18n.apply(); document.documentElement.classList.remove("i18nPending");</script>
 
 <script src="data.js?v=87e681c07e"></script>
-<script src="js/format.js?v=5c1d1f4135"></script>
+<script src="js/data-i18n.js?v=2f26c89615"></script>
+<script src="js/format.js?v=5a3d6f6768"></script>
 <script src="js/rules.js?v=1eb01b953e"></script>
 <script src="js/meta.js?v=313395db73"></script>
 <script src="js/run.js?v=1e877af297"></script>
 <script src="js/report.js?v=68f744bf18"></script>
-<script src="js/achievements.js?v=e9226b5bf6"></script>
-<script src="js/saves.js?v=db6fd1ae4c"></script>
+<script src="js/achievements.js?v=21b2f61c3f"></script>
+<script src="js/saves.js?v=ae27e364dd"></script>
 <script src="js/chart.js?v=4db7c9181b"></script>
-<script src="js/briefing.js?v=b42e86fb37"></script>
+<script src="js/briefing.js?v=93472b2b03"></script>
 <script src="js/sound.js?v=dfbd41140d"></script>
 <script src="js/backgrounds.js?v=0a7d9de445"></script>
-<script src="js/battle-ui.js?v=bcab858d0d"></script>
-<script src="js/screens-ui.js?v=9a1e3687b2"></script>
+<script src="js/battle-ui.js?v=dcb8c2218b"></script>
+<script src="js/screens-ui.js?v=be588779c2"></script>
 <script src="js/app.js?v=19d78d857e"></script>
 </body>
 </html>
