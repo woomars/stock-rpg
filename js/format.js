@@ -6,11 +6,17 @@
 
   const lang = () => (globalThis.I18n ? globalThis.I18n.lang : 'ko');
   // 원화 단위. 일본어도 만·억·조를 쓰는 말이라 같은 틀에 글자만 바꾼다.
-  const UNITS = { ko: ['만', '억', '조', '원', ' '], ja: ['万', '億', '兆', 'ウォン', ''] };
+  // 일본어는 stock-game과 같이 ₩를 앞에 붙이고 ウォン 글자는 쓰지 않는다: ₩1億1,923万, ₩1,000万, ₩5,000.
+  const UNITS = { ko: ['만', '억', '조', '원', ' '], ja: ['万', '億', '兆', '', ''] };
+  const PREFIX = { ko: '', ja: '₩' };
 
   // 표시 단위로 먼저 반올림한 뒤 단위를 고른다. "10,000만"이나 "1억 10,000만"이 나오지 않게 하기 위해서다.
   function won(abs) {
     if (lang() === 'en') return wonEn(abs);
+    return (PREFIX[lang()] || '') + wonUnits(abs);
+  }
+
+  function wonUnits(abs) {
     const [MAN, EOK, JO, WON, SP] = UNITS[lang()] || UNITS.ko;
     if (abs < 1e4) return `${comma(abs)}${WON}`;
     if (abs < 1e6) {
@@ -51,8 +57,9 @@
 
   function price(n, currency = 'KRW') {
     if (currency !== 'USD') {
-      if (lang() === 'en') return `₩${comma(n)}`;
-      return `${comma(n)}${(UNITS[lang()] || UNITS.ko)[3]}`;
+      // 한 주 가격은 영어·일본어 모두 ₩82,800처럼 쓴다.
+      if (lang() === 'en' || lang() === 'ja') return `₩${comma(n)}`;
+      return `${comma(n)}${UNITS.ko[3]}`;
     }
     // 분할을 보정한 옛 달러 가격은 1달러보다 작을 수 있어 유효 숫자를 살린다.
     const digits = n < 1 ? 4 : n < 10 ? 3 : 2;

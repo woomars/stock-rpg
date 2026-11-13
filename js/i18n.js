@@ -351,7 +351,7 @@
       'sound.offState': '🔇 サウンド OFF',
       'start.title': '命がけ<br>投資',
       'start.funds': '初期資金 {money}',
-      'start.fundsInit': '初期資金 1,000万ウォン',
+      'start.fundsInit': '初期資金 ₩1,000万',
       'start.start': 'スタート',
       'start.continue': 'つづける',
       'start.newRun': '最初から',
@@ -678,7 +678,7 @@
       pyramid: ['買い上がり職人', '含み益中に3回買い増し'],
       hanRiver: ['リバービュー', 'HP1%以下から生き残る'],
       alwaysRight: ['利確は常に正しい', '通算で利益の出た売り100回'],
-      antEscape: ['アリ卒業', '最大HP 1億に到達'],
+      antEscape: ['アリ卒業', '最大HP ₩1億に到達'],
       firstUpgrade: ['初強化', '初めて永久強化を買った'],
       upgrade20: ['修行', '永久強化を通算20段階'],
       upgradeAll: ['悟り', 'すべての強化を最大段階に'],
@@ -789,11 +789,24 @@
     return m ? monster(m).name : monster({ id, name: fallback }).name;
   }
 
+  // 홈 화면 앱 이름: 언어별 manifest와 iOS·Windows가 읽는 meta 두 줄을 지금 언어로 맞춘다.
+  const MANIFEST = { ko: 'manifest.webmanifest', en: 'manifest.en.webmanifest', ja: 'manifest.ja.webmanifest' };
+  function applyHead() {
+    if (!inBrowser) return;
+    const link = document.querySelector('link[rel="manifest"]');
+    if (link && link.getAttribute('href') !== MANIFEST[lang]) link.setAttribute('href', MANIFEST[lang]);
+    for (const name of ['apple-mobile-web-app-title', 'application-name']) {
+      const m = document.querySelector(`meta[name="${name}"]`);
+      if (m) m.setAttribute('content', t('app.name'));
+    }
+  }
+
   // 고정 문구: data-i18n(글), data-i18n-html(줄바꿈 포함), data-i18n-aria(설명)
   function apply(root = document) {
     if (!inBrowser) return;
     document.documentElement.lang = lang;
     document.title = t('app.name');
+    applyHead();
     for (const el of root.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
     for (const el of root.querySelectorAll('[data-i18n-html]')) el.innerHTML = t(el.dataset.i18nHtml);
     for (const el of root.querySelectorAll('[data-i18n-aria]')) el.setAttribute('aria-label', t(el.dataset.i18nAria));
@@ -818,6 +831,7 @@
 
   // 언어 고르기 버튼(data-lang)은 화면 어디에 있든 같은 동작을 한다.
   if (inBrowser) {
+    applyHead();
     document.addEventListener('click', (e) => {
       const b = e.target.closest && e.target.closest('[data-lang]');
       if (b) set(b.dataset.lang);
@@ -825,7 +839,7 @@
   }
 
   const I18n = {
-    LANGS, KEY, STRINGS: S, ITEMS, UPGRADES, ACH, ERAS,
+    LANGS, KEY, MANIFEST, STRINGS: S, ITEMS, UPGRADES, ACH, ERAS,
     get lang() { return lang; },
     get locale() { return LOCALE[lang]; },
     t, set, apply, detect, fromBrowser, onChange: (fn) => listeners.push(fn),

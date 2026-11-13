@@ -1,8 +1,8 @@
 {
-  "name": "Invest or Die",
-  "short_name": "Invest or Die",
-  "description": "A first-person mobile roguelike: trade through real historical stock charts to defeat 10 company monsters. Your account is your HP.",
-  "lang": "en",
+  "name": "목숨걸고 투자",
+  "short_name": "목숨걸고 투자",
+  "description": "실제 과거 주가 차트 위에서 사고팔아 기업 몬스터 10마리를 쓰러뜨리는 1인칭 모바일 로그라이크. 계좌가 체력입니다.",
+  "lang": "ko",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",

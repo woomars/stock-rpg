@@ -1,0 +1,24 @@
+{
+  "name": "命がけ投資",
+  "short_name": "命がけ投資",
+  "description": "実際の過去の株価チャートで売買し、企業モンスター10体を倒す一人称モバイルローグライク。口座残高がそのままHP。",
+  "lang": "ja",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#090712",
+  "theme_color": "#090712",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
