@@ -12,11 +12,12 @@
 <!-- 홈 화면 앱 이름은 화면 언어를 따른다. 기본은 한국어이고, i18n.js가 언어를 정하거나 바꿀 때 manifest 주소와 이 두 줄을 그 언어로 바꾼다. -->
 <meta name="apple-mobile-web-app-title" content="목숨걸고 투자">
 <meta name="application-name" content="목숨걸고 투자">
-<link rel="stylesheet" href="style.css?v=a85264f555">
+<link rel="stylesheet" href="style.css?v=45d21b7b8e">
 <script src="js/flags.js?v=aa4e935ee3"></script>
 <script src="js/i18n.js?v=f5b1e161cb"></script>
 <script>document.documentElement.lang = I18n.lang; document.title = I18n.t("app.name"); document.documentElement.classList.add("i18nPending");</script>
   <script src="https://woomars.github.io/count.js" defer></script>
+  <script src="https://woomars.github.io/ios.js" data-game="stock-rpg" defer></script>
 </head>
 <body>
 <div id="app">
@@ -36,6 +37,7 @@
       <button id="btnJourney" class="solid" data-i18n="start.journey">그동안의 여정</button>
       <button id="btnTrophy" class="solid" data-i18n="start.trophy">트로피와 메달</button>
       <p class="disclaimer" id="disclaimer" data-i18n="start.disclaimer">재미용 게임입니다. 투자 조언이 아닙니다. 과거 실제 주가를 씁니다.</p>
+      <button id="btnIOSReport" class="iosReport" type="button" hidden></button>
     </div>
   </section>
 
@@ -224,7 +226,7 @@
 <script src="js/sound.js?v=dfbd41140d"></script>
 <script src="js/backgrounds.js?v=0a7d9de445"></script>
 <script src="js/battle-ui.js?v=dcb8c2218b"></script>
-<script src="js/screens-ui.js?v=be588779c2"></script>
+<script src="js/screens-ui.js?v=5faf251acf"></script>
 <script src="js/app.js?v=19d78d857e"></script>
 </body>
 </html>

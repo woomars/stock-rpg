@@ -46,6 +46,17 @@
     $('btnNewRun').hidden = !saved;
     const mods = Meta.mods(UI.collection.meta);
     $('startSub').textContent = t('start.funds', { money: Format.money(Rules.CONFIG.startHp + mods.startBonus) });
+    renderIOSReport();
+  }
+
+  // 아이폰일 때만 시작 화면 맨 아래의 작은 「문제 신고」 버튼(허브 공통 ios.js 의 WoomarsIOS, 글자는 지금 언어).
+  // ios.js 는 defer 라 이 스크립트보다 늦게 온다 → woomars-ios-ready 때 다시 그린다. 없거나 실패하면 숨긴 채.
+  function renderIOSReport() {
+    const b = $('btnIOSReport');
+    const ios = window.WoomarsIOS;
+    if (!b) return;
+    b.hidden = !(ios && ios.isIOS);
+    if (!b.hidden) b.textContent = ios.reportLabel();
   }
 
   // ---------- 성장 ----------
@@ -367,6 +378,8 @@
 
   UI.bootScreens = () => {
     bind();
+    $('btnIOSReport').addEventListener('click', () => { if (window.WoomarsIOS) window.WoomarsIOS.report(); });
+    window.addEventListener('woomars-ios-ready', renderIOSReport);
     // 언어 고르기는 시작 화면과 일시정지 화면에 있다. 시작 화면은 바로 다시 그린다.
     I18n.onChange(() => { if (App.current === 'start') renderStart(); });
     UI.onRunEnd = onRunEnd;
